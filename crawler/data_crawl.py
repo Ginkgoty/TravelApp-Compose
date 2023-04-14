@@ -244,10 +244,10 @@ def get_spot_detail(spot_id):
 
 # 爬虫主函数
 def crawl(keyword):
-    db = psycopg2.connect(host='118.31.67.238',
+    db = psycopg2.connect(host='127.0.0.1',
                           port='5433',
                           user='postgres',
-                          password='47zyetnF&Urx',
+                          password='password',
                           database='travelapp')
 
     # 开启自动提交

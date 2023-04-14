@@ -4,9 +4,9 @@
     //filename: sqlite3 db file name
     //"filename":"",
     //host: server address,localhost by default;
-    "host": "118.31.67.238",
+    "host": "127.0.01",
     //port: server port, 5432 by default;
-    "port": 5433,
+    "port": 5432,
     //dbname: Database name;
     "dbname": "travelapp",
     //schema: valid for postgreSQL, "public" by default;
@@ -14,7 +14,7 @@
     //user: User name
     "user": "postgres",
     //password or passwd: Password
-    "password": "47zyetnF&Urx",
+    "password": "password",
     //client_encoding: The character set used by drogon_ctl. it is empty string by default which 
     //means use the default character set.
     //"client_encoding": "",

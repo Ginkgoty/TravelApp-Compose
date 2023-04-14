@@ -8,10 +8,16 @@ Technology stack：
 
 ## Screenshots
 <center class="half">
-    <img src="img/Screenshot_20230401_223940.png" width="150"/>
-    <img src="img/Screenshot_20230401_223959.png" width="150"/>
-    <img src="img/Screenshot_20230401_224045.png" width="150"/>
-    <img src="img/Screenshot_20230401_224100.png" width="150"/>
+    <img src="img/1.jpeg" width="150"/>
+    <img src="img/2.jpeg" width="150"/>
+    <img src="img/3.jpeg" width="150"/>
+    <img src="img/4.jpeg" width="150"/>
+</center>
+<center class="half">
+  <img src="img/5.jpeg" width="150"/>
+  <img src="img/6.jpeg" width="150"/>
+  <img src="img/7.jpeg" width="150"/>
+  <img src="img/8.jpeg" width="150"/>
 </center>
 
 ## Functions
@@ -26,5 +32,4 @@ About how to deployment a server, please see "server/README.md" & "crawler/READM
 
 ## Hint
 For better experience, please use a higher version of Android.
-
 

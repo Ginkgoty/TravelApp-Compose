@@ -71,9 +71,9 @@ def get_note_list():
     note_list = []
     session = against_anti_crawl(BASE_URL)
     db = psycopg2.connect(host='118.31.67.238',
-                          port='5433',
+                          port='5432',
                           user='postgres',
-                          password='47zyetnF&Urx',
+                          password='password',
                           database='travelapp')
 
     # 开启自动提交
@@ -249,10 +249,10 @@ def analyse_note(url):
 
 def crawl():
     note_list = get_note_list()
-    db = psycopg2.connect(host='118.31.67.238',
-                          port='5433',
+    db = psycopg2.connect(host='127.0.0.1',
+                          port='5432',
                           user='postgres',
-                          password='47zyetnF&Urx',
+                          password='password',
                           database='travelapp')
 
     # 开启自动提交
