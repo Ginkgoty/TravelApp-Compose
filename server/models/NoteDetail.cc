@@ -15,7 +15,7 @@ using namespace drogon_model::travelapp;
 
 const std::string NoteDetail::Cols::_nid = "nid";
 const std::string NoteDetail::Cols::_background = "background";
-const std::string NoteDetail::Cols::_uname = "uname";
+const std::string NoteDetail::Cols::_uid = "uid";
 const std::string NoteDetail::Cols::_time = "time";
 const std::string NoteDetail::Cols::_title = "title";
 const std::string NoteDetail::Cols::_content = "content";
@@ -26,7 +26,7 @@ const std::string NoteDetail::tableName = "note_detail";
 const std::vector<typename NoteDetail::MetaData> NoteDetail::metaData_={
 {"nid","int32_t","integer",4,0,1,1},
 {"background","std::string","text",0,0,0,1},
-{"uname","std::string","character varying",255,0,0,1},
+{"uid","int32_t","integer",4,0,0,1},
 {"time","::trantor::Date","date",0,0,0,1},
 {"title","std::string","text",0,0,0,1},
 {"content","std::string","json",0,0,0,1}
@@ -48,9 +48,9 @@ NoteDetail::NoteDetail(const Row &r, const ssize_t indexOffset) noexcept
         {
             background_=std::make_shared<std::string>(r["background"].as<std::string>());
         }
-        if(!r["uname"].isNull())
+        if(!r["uid"].isNull())
         {
-            uname_=std::make_shared<std::string>(r["uname"].as<std::string>());
+            uid_=std::make_shared<int32_t>(r["uid"].as<int32_t>());
         }
         if(!r["time"].isNull())
         {
@@ -92,7 +92,7 @@ NoteDetail::NoteDetail(const Row &r, const ssize_t indexOffset) noexcept
         index = offset + 2;
         if(!r[index].isNull())
         {
-            uname_=std::make_shared<std::string>(r[index].as<std::string>());
+            uid_=std::make_shared<int32_t>(r[index].as<int32_t>());
         }
         index = offset + 3;
         if(!r[index].isNull())
@@ -146,7 +146,7 @@ NoteDetail::NoteDetail(const Json::Value &pJson, const std::vector<std::string> 
         dirtyFlag_[2] = true;
         if(!pJson[pMasqueradingVector[2]].isNull())
         {
-            uname_=std::make_shared<std::string>(pJson[pMasqueradingVector[2]].asString());
+            uid_=std::make_shared<int32_t>((int32_t)pJson[pMasqueradingVector[2]].asInt64());
         }
     }
     if(!pMasqueradingVector[3].empty() && pJson.isMember(pMasqueradingVector[3]))
@@ -198,12 +198,12 @@ NoteDetail::NoteDetail(const Json::Value &pJson) noexcept(false)
             background_=std::make_shared<std::string>(pJson["background"].asString());
         }
     }
-    if(pJson.isMember("uname"))
+    if(pJson.isMember("uid"))
     {
         dirtyFlag_[2]=true;
-        if(!pJson["uname"].isNull())
+        if(!pJson["uid"].isNull())
         {
-            uname_=std::make_shared<std::string>(pJson["uname"].asString());
+            uid_=std::make_shared<int32_t>((int32_t)pJson["uid"].asInt64());
         }
     }
     if(pJson.isMember("time"))
@@ -265,7 +265,7 @@ void NoteDetail::updateByMasqueradedJson(const Json::Value &pJson,
         dirtyFlag_[2] = true;
         if(!pJson[pMasqueradingVector[2]].isNull())
         {
-            uname_=std::make_shared<std::string>(pJson[pMasqueradingVector[2]].asString());
+            uid_=std::make_shared<int32_t>((int32_t)pJson[pMasqueradingVector[2]].asInt64());
         }
     }
     if(!pMasqueradingVector[3].empty() && pJson.isMember(pMasqueradingVector[3]))
@@ -316,12 +316,12 @@ void NoteDetail::updateByJson(const Json::Value &pJson) noexcept(false)
             background_=std::make_shared<std::string>(pJson["background"].asString());
         }
     }
-    if(pJson.isMember("uname"))
+    if(pJson.isMember("uid"))
     {
         dirtyFlag_[2] = true;
-        if(!pJson["uname"].isNull())
+        if(!pJson["uid"].isNull())
         {
-            uname_=std::make_shared<std::string>(pJson["uname"].asString());
+            uid_=std::make_shared<int32_t>((int32_t)pJson["uid"].asInt64());
         }
     }
     if(pJson.isMember("time"))
@@ -399,25 +399,20 @@ void NoteDetail::setBackground(std::string &&pBackground) noexcept
     dirtyFlag_[1] = true;
 }
 
-const std::string &NoteDetail::getValueOfUname() const noexcept
+const int32_t &NoteDetail::getValueOfUid() const noexcept
 {
-    const static std::string defaultValue = std::string();
-    if(uname_)
-        return *uname_;
+    const static int32_t defaultValue = int32_t();
+    if(uid_)
+        return *uid_;
     return defaultValue;
 }
-const std::shared_ptr<std::string> &NoteDetail::getUname() const noexcept
+const std::shared_ptr<int32_t> &NoteDetail::getUid() const noexcept
 {
-    return uname_;
+    return uid_;
 }
-void NoteDetail::setUname(const std::string &pUname) noexcept
+void NoteDetail::setUid(const int32_t &pUid) noexcept
 {
-    uname_ = std::make_shared<std::string>(pUname);
-    dirtyFlag_[2] = true;
-}
-void NoteDetail::setUname(std::string &&pUname) noexcept
-{
-    uname_ = std::make_shared<std::string>(std::move(pUname));
+    uid_ = std::make_shared<int32_t>(pUid);
     dirtyFlag_[2] = true;
 }
 
@@ -491,7 +486,7 @@ const std::vector<std::string> &NoteDetail::insertColumns() noexcept
     static const std::vector<std::string> inCols={
         "nid",
         "background",
-        "uname",
+        "uid",
         "time",
         "title",
         "content"
@@ -525,9 +520,9 @@ void NoteDetail::outputArgs(drogon::orm::internal::SqlBinder &binder) const
     }
     if(dirtyFlag_[2])
     {
-        if(getUname())
+        if(getUid())
         {
-            binder << getValueOfUname();
+            binder << getValueOfUid();
         }
         else
         {
@@ -625,9 +620,9 @@ void NoteDetail::updateArgs(drogon::orm::internal::SqlBinder &binder) const
     }
     if(dirtyFlag_[2])
     {
-        if(getUname())
+        if(getUid())
         {
-            binder << getValueOfUname();
+            binder << getValueOfUid();
         }
         else
         {
@@ -687,13 +682,13 @@ Json::Value NoteDetail::toJson() const
     {
         ret["background"]=Json::Value();
     }
-    if(getUname())
+    if(getUid())
     {
-        ret["uname"]=getValueOfUname();
+        ret["uid"]=getValueOfUid();
     }
     else
     {
-        ret["uname"]=Json::Value();
+        ret["uid"]=Json::Value();
     }
     if(getTime())
     {
@@ -752,9 +747,9 @@ Json::Value NoteDetail::toMasqueradedJson(
         }
         if(!pMasqueradingVector[2].empty())
         {
-            if(getUname())
+            if(getUid())
             {
-                ret[pMasqueradingVector[2]]=getValueOfUname();
+                ret[pMasqueradingVector[2]]=getValueOfUid();
             }
             else
             {
@@ -813,13 +808,13 @@ Json::Value NoteDetail::toMasqueradedJson(
     {
         ret["background"]=Json::Value();
     }
-    if(getUname())
+    if(getUid())
     {
-        ret["uname"]=getValueOfUname();
+        ret["uid"]=getValueOfUid();
     }
     else
     {
-        ret["uname"]=Json::Value();
+        ret["uid"]=Json::Value();
     }
     if(getTime())
     {
@@ -870,14 +865,14 @@ bool NoteDetail::validateJsonForCreation(const Json::Value &pJson, std::string &
         err="The background column cannot be null";
         return false;
     }
-    if(pJson.isMember("uname"))
+    if(pJson.isMember("uid"))
     {
-        if(!validJsonOfField(2, "uname", pJson["uname"], err, true))
+        if(!validJsonOfField(2, "uid", pJson["uid"], err, true))
             return false;
     }
     else
     {
-        err="The uname column cannot be null";
+        err="The uid column cannot be null";
         return false;
     }
     if(pJson.isMember("time"))
@@ -1025,9 +1020,9 @@ bool NoteDetail::validateJsonForUpdate(const Json::Value &pJson, std::string &er
         if(!validJsonOfField(1, "background", pJson["background"], err, false))
             return false;
     }
-    if(pJson.isMember("uname"))
+    if(pJson.isMember("uid"))
     {
-        if(!validJsonOfField(2, "uname", pJson["uname"], err, false))
+        if(!validJsonOfField(2, "uid", pJson["uid"], err, false))
             return false;
     }
     if(pJson.isMember("time"))
@@ -1138,20 +1133,11 @@ bool NoteDetail::validJsonOfField(size_t index,
                 err="The " + fieldName + " column cannot be null";
                 return false;
             }
-            if(!pJson.isString())
+            if(!pJson.isInt())
             {
                 err="Type error in the "+fieldName+" field";
                 return false;
             }
-            // asString().length() creates a string object, is there any better way to validate the length?
-            if(pJson.isString() && pJson.asString().length() > 255)
-            {
-                err="String length exceeds limit for the " +
-                    fieldName +
-                    " field (the maximum value is 255)";
-                return false;
-            }
-
             break;
         case 3:
             if(pJson.isNull())

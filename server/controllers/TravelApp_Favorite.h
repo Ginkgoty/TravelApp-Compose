@@ -1,13 +1,3 @@
-/**
- * @file TravelApp_Favorite.h
- * @author Li Jiawen (nmjbh@qq.com)
- * @brief 
- * @version 1.0
- * @date 2023-04-01
- * 
- * @copyright Copyright (c) 2023
- * 
- */
 #pragma once
 
 #include <drogon/HttpController.h>

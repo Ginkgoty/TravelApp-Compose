@@ -42,7 +42,9 @@ class Traveler
   public:
     struct Cols
     {
+        static const std::string _uid;
         static const std::string _uname;
+        static const std::string _upic;
         static const std::string _pwd;
     };
 
@@ -50,7 +52,7 @@ class Traveler
     const static std::string tableName;
     const static bool hasPrimaryKey;
     const static std::string primaryKeyName;
-    using PrimaryKeyType = std::string;
+    using PrimaryKeyType = int32_t;
     const PrimaryKeyType &getPrimaryKey() const;
 
     /**
@@ -95,6 +97,14 @@ class Traveler
                           std::string &err,
                           bool isForCreation);
 
+    /**  For column uid  */
+    ///Get the value of the column uid, returns the default value if the column is null
+    const int32_t &getValueOfUid() const noexcept;
+    ///Return a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null
+    const std::shared_ptr<int32_t> &getUid() const noexcept;
+    ///Set the value of the column uid
+    void setUid(const int32_t &pUid) noexcept;
+
     /**  For column uname  */
     ///Get the value of the column uname, returns the default value if the column is null
     const std::string &getValueOfUname() const noexcept;
@@ -103,6 +113,15 @@ class Traveler
     ///Set the value of the column uname
     void setUname(const std::string &pUname) noexcept;
     void setUname(std::string &&pUname) noexcept;
+
+    /**  For column upic  */
+    ///Get the value of the column upic, returns the default value if the column is null
+    const std::string &getValueOfUpic() const noexcept;
+    ///Return a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null
+    const std::shared_ptr<std::string> &getUpic() const noexcept;
+    ///Set the value of the column upic
+    void setUpic(const std::string &pUpic) noexcept;
+    void setUpic(std::string &&pUpic) noexcept;
 
     /**  For column pwd  */
     ///Get the value of the column pwd, returns the default value if the column is null
@@ -114,7 +133,7 @@ class Traveler
     void setPwd(std::string &&pPwd) noexcept;
 
 
-    static size_t getColumnNumber() noexcept {  return 2;  }
+    static size_t getColumnNumber() noexcept {  return 4;  }
     static const std::string &getColumnName(size_t index) noexcept(false);
 
     Json::Value toJson() const;
@@ -131,7 +150,9 @@ class Traveler
     void updateArgs(drogon::orm::internal::SqlBinder &binder) const;
     ///For mysql or sqlite3
     void updateId(const uint64_t id);
+    std::shared_ptr<int32_t> uid_;
     std::shared_ptr<std::string> uname_;
+    std::shared_ptr<std::string> upic_;
     std::shared_ptr<std::string> pwd_;
     struct MetaData
     {
@@ -144,17 +165,17 @@ class Traveler
         const bool notNull_;
     };
     static const std::vector<MetaData> metaData_;
-    bool dirtyFlag_[2]={ false };
+    bool dirtyFlag_[4]={ false };
   public:
     static const std::string &sqlForFindingByPrimaryKey()
     {
-        static const std::string sql="select * from " + tableName + " where uname = $1";
+        static const std::string sql="select * from " + tableName + " where uid = $1";
         return sql;
     }
 
     static const std::string &sqlForDeletingByPrimaryKey()
     {
-        static const std::string sql="delete from " + tableName + " where uname = $1";
+        static const std::string sql="delete from " + tableName + " where uid = $1";
         return sql;
     }
     std::string sqlForInserting(bool &needSelection) const
@@ -164,10 +185,20 @@ class Traveler
         needSelection = false;
         if(dirtyFlag_[0])
         {
-            sql += "uname,";
+            sql += "uid,";
             ++parametersCount;
         }
         if(dirtyFlag_[1])
+        {
+            sql += "uname,";
+            ++parametersCount;
+        }
+        if(dirtyFlag_[2])
+        {
+            sql += "upic,";
+            ++parametersCount;
+        }
+        if(dirtyFlag_[3])
         {
             sql += "pwd,";
             ++parametersCount;
@@ -189,6 +220,16 @@ class Traveler
             sql.append(placeholderStr, n);
         }
         if(dirtyFlag_[1])
+        {
+            n = sprintf(placeholderStr,"$%d,",placeholder++);
+            sql.append(placeholderStr, n);
+        }
+        if(dirtyFlag_[2])
+        {
+            n = sprintf(placeholderStr,"$%d,",placeholder++);
+            sql.append(placeholderStr, n);
+        }
+        if(dirtyFlag_[3])
         {
             n = sprintf(placeholderStr,"$%d,",placeholder++);
             sql.append(placeholderStr, n);

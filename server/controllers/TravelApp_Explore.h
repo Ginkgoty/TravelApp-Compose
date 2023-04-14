@@ -1,29 +1,19 @@
-/**
- * @file TravelApp_Explore.h
- * @author Li Jiawen (nmjbh@qq.com)
- * @brief 
- * @version 1.0
- * @date 2023-04-01
- * 
- * @copyright Copyright (c) 2023
- * 
- */
 #pragma once
 
-#include <drogon/HttpSimpleController.h>
+#include <drogon/HttpController.h>
 
 using namespace drogon;
 
-namespace TravelApp
-{
-class Main : public drogon::HttpSimpleController<Main>
-{
-  public:
-    void asyncHandleHttpRequest(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback) override;
-    PATH_LIST_BEGIN
-    // list path definitions here;
-    // PATH_ADD("/path", "filter1", "filter2", HttpMethod1, HttpMethod2...);
-    PATH_ADD("/main");
-    PATH_LIST_END
-};
+namespace TravelApp {
+    class Main : public drogon::HttpController<Main> {
+    public:
+        METHOD_LIST_BEGIN
+            ADD_METHOD_TO(Main::getRegionList, "/main", Get);
+            ADD_METHOD_TO(Main::getRecommendList, "/recommend", Get);
+        METHOD_LIST_END
+
+        void getRegionList(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback);
+
+        void getRecommendList(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback);
+    };
 }

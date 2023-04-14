@@ -1,11 +1,3 @@
-/**
- * MessageDigestAlgorithm.kt
- *
- * This file contains supported hash algorithms
- *
- * @author Li Jiawen
- * @mail nmjbh@qq.com
- */
 package cn.edu.seu.travelapp.util
 
 object MessageDigestAlgorithm {

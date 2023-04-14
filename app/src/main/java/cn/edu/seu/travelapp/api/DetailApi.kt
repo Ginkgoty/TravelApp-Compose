@@ -1,11 +1,3 @@
-/**
- * Detail.kt
- *
- * This file is api of get spot detail
- * @author Li Jiawen
- * @mail   nmjbh@qq.com
- *
- */
 package cn.edu.seu.travelapp.api
 
 import cn.edu.seu.travelapp.model.Detail

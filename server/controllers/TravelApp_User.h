@@ -1,13 +1,3 @@
-/**
- * @file TravelApp_User.h
- * @author Li Jiawen (nmjbh@qq.com)
- * @brief 
- * @version 1.0
- * @date 2023-04-01
- * 
- * @copyright Copyright (c) 2023
- * 
- */
 #pragma once
 
 #include <drogon/HttpController.h>
@@ -22,6 +12,7 @@ namespace TravelApp {
             ADD_METHOD_TO(User::sign_in, "/sign_in?uname={1}&pwd={2}", Post);
             ADD_METHOD_TO(User::change_pwd, "/change/pwd?pwd={}", Post, "TravelApp::LoginFilter");
             ADD_METHOD_TO(User::change_uname, "/change/uname?uname={}", Post, "TravelApp::LoginFilter");
+            ADD_METHOD_TO(User::change_upic, "/change/upic?upic={}", Post, "TravelApp::LoginFilter");
         METHOD_LIST_END
 
         // your declaration of processing function maybe like this:
@@ -39,6 +30,9 @@ namespace TravelApp {
 
         void change_uname(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback,
                           const std::string &uname);
+
+        void change_upic(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback,
+                         const std::string &upic);
 
         // void your_method_name(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback, double p1, int p2) const;
     };

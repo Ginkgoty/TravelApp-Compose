@@ -1,10 +1,3 @@
-/**
- * SpotDetail.kt
- *
- * This file is ui of spot detail.
- * @author Li Jiawen
- * @mail   213202838@seu.edu.cn
- */
 package cn.edu.seu.travelapp.ui.components
 
 
@@ -23,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.OpenInNew
+import androidx.compose.material.icons.filled.UnfoldLess
 import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -151,16 +145,30 @@ fun SpotDetail(
                             fontFamily = FontFamily(Font(R.font.hggys)),
                             modifier = Modifier.offset(x = 10.dp, y = 10.dp),
                         )
-                        IconButton(
-                            onClick = {
-                                introFoldState = !introFoldState
-                            },
-                            modifier = Modifier.offset(y = 4.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.UnfoldMore,
-                                contentDescription = "expand"
-                            )
+                        if (introFoldState) {
+                            IconButton(
+                                onClick = {
+                                    introFoldState = !introFoldState
+                                },
+                                modifier = Modifier.offset(y = 4.dp),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.UnfoldMore,
+                                    contentDescription = "expand"
+                                )
+                            }
+                        } else {
+                            IconButton(
+                                onClick = {
+                                    introFoldState = !introFoldState
+                                },
+                                modifier = Modifier.offset(y = 4.dp),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.UnfoldLess,
+                                    contentDescription = "expand"
+                                )
+                            }
                         }
                     }
                 } else {
@@ -254,16 +262,30 @@ fun SpotDetail(
                             fontFamily = FontFamily(Font(R.font.hggys)),
                             modifier = Modifier.offset(x = 10.dp, y = 10.dp),
                         )
-                        IconButton(
-                            onClick = {
-                                trafficFoldState = !trafficFoldState
-                            },
-                            modifier = Modifier.offset(y = 4.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.UnfoldMore,
-                                contentDescription = "expand"
-                            )
+                        if (trafficFoldState) {
+                            IconButton(
+                                onClick = {
+                                    trafficFoldState = !trafficFoldState
+                                },
+                                modifier = Modifier.offset(y = 4.dp),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.UnfoldMore,
+                                    contentDescription = "expand"
+                                )
+                            }
+                        } else {
+                            IconButton(
+                                onClick = {
+                                    trafficFoldState = !trafficFoldState
+                                },
+                                modifier = Modifier.offset(y = 4.dp),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.UnfoldLess,
+                                    contentDescription = "expand"
+                                )
+                            }
                         }
                     }
                 } else {
@@ -364,16 +386,30 @@ fun SpotDetail(
                             fontFamily = FontFamily(Font(R.font.hggys)),
                             modifier = Modifier.offset(x = 10.dp, y = 10.dp),
                         )
-                        IconButton(
-                            onClick = {
-                                opennessFoldState = !opennessFoldState
-                            },
-                            modifier = Modifier.offset(y = 4.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.UnfoldMore,
-                                contentDescription = "expand"
-                            )
+                        if (opennessFoldState) {
+                            IconButton(
+                                onClick = {
+                                    opennessFoldState = !opennessFoldState
+                                },
+                                modifier = Modifier.offset(y = 4.dp),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.UnfoldMore,
+                                    contentDescription = "expand"
+                                )
+                            }
+                        } else {
+                            IconButton(
+                                onClick = {
+                                    opennessFoldState = !opennessFoldState
+                                },
+                                modifier = Modifier.offset(y = 4.dp),
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.UnfoldLess,
+                                    contentDescription = "expand"
+                                )
+                            }
                         }
                     }
                 } else {
@@ -462,7 +498,8 @@ fun SpotDetail(
                             packageName = "com.autonavi.minimap"
                         )
                     ) {
-                        "androidamap://viewMap?sourceApplication=travelapp&poiname=${sname}&lat=${detail.lat}&lon=${detail.lng}&dev=0"
+                        // "androidamap://viewMap?sourceApplication=travelapp&poiname=${sname}&lat=${detail.lat}&lon=${detail.lng}&dev=0"
+                        "amapuri://poi/detail?sourceApplication=travelapp&poiname=${sname}&lat=${detail.lat}&lon=${detail.lng}"
                     } else {
                         "https://m.amap.com/regeo?lat=${detail.lat}&lng=${detail.lng}"
                     }
@@ -483,15 +520,15 @@ fun getInstallerPackageName(context: Context, packageName: String): Boolean {
 //    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
 //        return !context.packageManager.getInstallSourceInfo(packageName).installingPackageName.isNullOrEmpty()
 //    else {
-        @Suppress("DEPRECATION")
-        val pinfo = context.packageManager.getInstalledPackages(0) // 获取所有已安装程序的包信息
-        for (i in pinfo.indices) {
-            val pn = pinfo[i].packageName
-            Log.d("pn", pn)
-            if (pn == packageName) {
-                return true
-            }
+    @Suppress("DEPRECATION")
+    val pinfo = context.packageManager.getInstalledPackages(0) // 获取所有已安装程序的包信息
+    for (i in pinfo.indices) {
+        val pn = pinfo[i].packageName
+        Log.d("pn", pn)
+        if (pn == packageName) {
+            return true
         }
+    }
 //    }
 //    }
     return false

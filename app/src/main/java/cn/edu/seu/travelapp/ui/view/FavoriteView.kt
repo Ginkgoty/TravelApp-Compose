@@ -1,13 +1,6 @@
-/**
- * FavoriteView.kt
- *
- * This file contains the entire ui of the Favorite view
- *
- * @author Li Jiawen
- * @mail nmjbh@qq.com
- */
 package cn.edu.seu.travelapp.ui.view
 
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -16,13 +9,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -40,12 +33,14 @@ import cn.edu.seu.travelapp.ui.components.SpotOutline
 import cn.edu.seu.travelapp.ui.state.*
 import cn.edu.seu.travelapp.viewmodel.FavoriteViewModel
 import cn.edu.seu.travelapp.viewmodel.FavoriteViewState
+import kotlinx.coroutines.delay
 
 @Composable
 fun FavoriteView(
     travelAppState: TravelAppState,
     favoriteViewModel: FavoriteViewModel,
-    paddingValues: PaddingValues
+    paddingValues: PaddingValues,
+    token: String
 ) {
     val favoriteViewState = favoriteViewModel.uiState.collectAsState()
     if (travelAppState.isLogin.value) {
@@ -78,6 +73,7 @@ fun FavoriteView(
                                     elevation = 4.dp
                                 ) {
                                     RegionOutline(region = item, onRegionClicked = {
+                                        travelAppState.bottomBarState.value = false
                                         favoriteViewModel.regionClicked(item)
                                     })
                                 }
@@ -110,6 +106,7 @@ fun FavoriteView(
                                     elevation = 4.dp
                                 ) {
                                     SpotOutline(spot = item, onSpotClicked = {
+                                        travelAppState.bottomBarState.value = false
                                         favoriteViewModel.spotClicked(item)
                                     })
                                 }
@@ -131,8 +128,27 @@ fun FavoriteView(
             }
             FavoriteContentState.SPOTS -> {
                 BackHandler(enabled = true) {
+                    travelAppState.bottomBarState.value = true
+                    favoriteViewModel.getFavSpotList(token)
+                    favoriteViewModel.getFavRegionList(token)
                     favoriteViewModel.updateTopBarState(FavoriteTopBarState.DEFAULT)
                     favoriteViewModel.updateContentState(FavoriteContentState.FAVORITE)
+                }
+
+                val snackState = remember { mutableStateOf(false) }
+                if (snackState.value) {
+                    Snackbar(
+                        modifier = Modifier.fillMaxWidth(),
+                        backgroundColor = Color.White,
+                        contentColor = MaterialTheme.colors.primary
+                    ) {
+                        Text("操作失败，请重试")
+                    }
+                }
+                LaunchedEffect(key1 = favoriteViewModel.opState) {
+                    snackState.value = !favoriteViewModel.opState.value
+                    delay(2000)
+                    snackState.value = false
                 }
                 FavoriteSpotList(
                     spotList = favoriteViewModel.spotsInRegion,
@@ -145,6 +161,9 @@ fun FavoriteView(
                 BackHandler(enabled = true) {
                     when (favoriteViewState.value.favoriteTopBarState) {
                         FavoriteTopBarState.SPOT -> {
+                            travelAppState.bottomBarState.value = true
+                            favoriteViewModel.getFavRegionList(token)
+                            favoriteViewModel.getFavSpotList(token)
                             favoriteViewModel.updateTopBarState(FavoriteTopBarState.DEFAULT)
                             favoriteViewModel.updateContentState(FavoriteContentState.FAVORITE)
                         }
@@ -156,7 +175,22 @@ fun FavoriteView(
 
                         }
                     }
+                }
 
+                val snackState = remember { mutableStateOf(false) }
+                if (snackState.value) {
+                    Snackbar(
+                        modifier = Modifier.fillMaxWidth(),
+                        backgroundColor = Color.White,
+                        contentColor = MaterialTheme.colors.primary
+                    ) {
+                        Text("操作失败，请重试")
+                    }
+                }
+                LaunchedEffect(key1 = favoriteViewModel.opState) {
+                    snackState.value = !favoriteViewModel.opState.value
+                    delay(2000)
+                    snackState.value = false
                 }
                 SpotDetail(
                     sname = favoriteViewState.value.spot!!.sname,
@@ -204,20 +238,30 @@ fun LoginPrompt(
 @Composable
 fun FavoriteAppBar(
     favoriteViewModel: FavoriteViewModel,
-    favoriteViewState: State<FavoriteViewState>
+    favoriteViewState: State<FavoriteViewState>,
+    travelAppState: TravelAppState,
+    token: String
 ) {
     when (favoriteViewState.value.favoriteTopBarState) {
         FavoriteTopBarState.DEFAULT -> {
             DefaultAppBar()
         }
         FavoriteTopBarState.REGION -> {
-            RegionAppBar(favoriteViewModel = favoriteViewModel)
+            RegionAppBar(
+                favoriteViewModel = favoriteViewModel,
+                travelAppState = travelAppState,
+                token = token
+            )
         }
         FavoriteTopBarState.SPOT -> {
-            SpotAppBar(favoriteViewModel = favoriteViewModel)
+            SpotAppBar(
+                favoriteViewModel = favoriteViewModel,
+                travelAppState = travelAppState,
+                token = token
+            )
         }
         FavoriteTopBarState.SPOT_FROM_REGION -> {
-            SpotFromRegionAppBar(favoriteViewModel = favoriteViewModel)
+            SpotFromRegionAppBar(favoriteViewModel = favoriteViewModel, token = token)
         }
     }
 
@@ -244,8 +288,11 @@ fun DefaultAppBar() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegionAppBar(
+    token: String,
+    travelAppState: TravelAppState,
     favoriteViewModel: FavoriteViewModel
 ) {
+    val region = favoriteViewModel.uiState.collectAsState().value.region
     CenterAlignedTopAppBar(
         title = {
             Text(
@@ -260,6 +307,9 @@ fun RegionAppBar(
         ),
         navigationIcon = {
             IconButton(onClick = {
+                travelAppState.bottomBarState.value = true
+                favoriteViewModel.getFavRegionList(token)
+                favoriteViewModel.getFavSpotList(token)
                 favoriteViewModel.updateTopBarState(FavoriteTopBarState.DEFAULT)
                 favoriteViewModel.updateContentState(FavoriteContentState.FAVORITE)
             }) {
@@ -270,14 +320,47 @@ fun RegionAppBar(
                 )
             }
         },
+        actions = {
+            val favState = remember {
+                mutableStateOf(true)
+            }
+            IconButton(
+                onClick = {
+                    if (favState.value) {
+                        favoriteViewModel.unfavRegion(region!!.rid, token = token)
+                        favState.value = false
+                    } else {
+                        favoriteViewModel.favRegion(region!!.rid, token = token)
+                        favState.value = true
+                    }
+                }
+            ) {
+                if (favState.value) {
+                    Icon(
+                        imageVector = Icons.Filled.Bookmark,
+                        contentDescription = "Favorite Button",
+                        tint = Color.White
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Filled.BookmarkBorder,
+                        contentDescription = "Favorite Button",
+                        tint = Color.White
+                    )
+                }
+            }
+        }
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SpotAppBar(
+    token: String,
+    travelAppState: TravelAppState,
     favoriteViewModel: FavoriteViewModel
 ) {
+    val spot = favoriteViewModel.uiState.collectAsState().value.spot
     CenterAlignedTopAppBar(
         title = {
             Text(
@@ -292,6 +375,9 @@ fun SpotAppBar(
         ),
         navigationIcon = {
             IconButton(onClick = {
+                travelAppState.bottomBarState.value = true
+                favoriteViewModel.getFavSpotList(token)
+                favoriteViewModel.getFavRegionList(token)
                 favoriteViewModel.updateTopBarState(FavoriteTopBarState.DEFAULT)
                 favoriteViewModel.updateContentState(FavoriteContentState.FAVORITE)
             }) {
@@ -300,6 +386,36 @@ fun SpotAppBar(
                     contentDescription = "Back to forward UI",
                     tint = Color.White,
                 )
+            }
+        },
+        actions = {
+            val favState = remember {
+                mutableStateOf(true)
+            }
+            IconButton(
+                onClick = {
+                    if (favState.value) {
+                        favoriteViewModel.unfavSpot(spot!!.sid, token = token)
+                        favState.value = false
+                    } else {
+                        favoriteViewModel.favSpot(spot!!.sid, token = token)
+                        favState.value = true
+                    }
+                }
+            ) {
+                if (favState.value) {
+                    Icon(
+                        imageVector = Icons.Filled.Bookmark,
+                        contentDescription = "Favorite Button",
+                        tint = Color.White
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Filled.BookmarkBorder,
+                        contentDescription = "Favorite Button",
+                        tint = Color.White
+                    )
+                }
             }
         }
     )
@@ -308,8 +424,10 @@ fun SpotAppBar(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SpotFromRegionAppBar(
+    token: String,
     favoriteViewModel: FavoriteViewModel
 ) {
+    val spot = favoriteViewModel.uiState.collectAsState().value.spot
     CenterAlignedTopAppBar(
         title = {
             Text(
@@ -333,6 +451,34 @@ fun SpotFromRegionAppBar(
                     tint = Color.White,
                 )
             }
+        },
+        actions = {
+            favoriteViewModel.isFavSpot(spot!!.sid, token = token)
+            IconButton(
+                onClick = {
+                    if (favoriteViewModel.query.value) {
+                        favoriteViewModel.unfavSpot(spot.sid, token = token)
+                        favoriteViewModel.query.value = false
+                    } else {
+                        favoriteViewModel.favSpot(spot.sid, token = token)
+                        favoriteViewModel.query.value = true
+                    }
+                }
+            ) {
+                if (favoriteViewModel.query.value) {
+                    Icon(
+                        imageVector = Icons.Filled.Bookmark,
+                        contentDescription = "Favorite Button",
+                        tint = Color.White
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Filled.BookmarkBorder,
+                        contentDescription = "Favorite Button",
+                        tint = Color.White
+                    )
+                }
+            }
         }
     )
 }
@@ -353,6 +499,7 @@ fun FavoriteSpotList(
             RegionIntro(
                 rname = favoriteViewState.value.region!!.rname,
                 intro = favoriteViewState.value.region!!.intro,
+                view = favoriteViewState.value.region!!.view,
                 paddingValues = paddingValues
             )
         }

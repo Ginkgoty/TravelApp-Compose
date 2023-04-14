@@ -1,13 +1,3 @@
-/**
- * @file TravelApp_Region.h
- * @author Li Jiawen (nmjbh@qq.com)
- * @brief 
- * @version 1.0
- * @date 2023-04-01
- * 
- * @copyright Copyright (c) 2023
- * 
- */
 #pragma once
 
 #include <drogon/HttpController.h>
@@ -23,12 +13,16 @@ namespace TravelApp {
             // METHOD_ADD(Region::your_method_name, "/{1}/{2}/list", Get); // path is /TravelApp/Region/{arg1}/{arg2}/list
             ADD_METHOD_TO(Region::get, "/region?rid={}", Get);
             ADD_METHOD_TO(Region::getRegionInfo, "/region/info?rid={}", Get);
+            ADD_METHOD_TO(Region::getFoodList, "/food?rid={}", Get);
             // ADD_METHOD_TO(Region::your_method_name, "/absolute/path/{1}/{2}/list", Get); // path is /absolute/path/{arg1}/{arg2}/list
         METHOD_LIST_END
 
         // your declaration of processing function maybe like this:
         void get(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback, int rid);
+
         void getRegionInfo(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback, int rid);
+
+        void getFoodList(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback, int rid);
         // void your_method_name(const HttpRequestPtr& req, std::function<void (const HttpResponsePtr &)> &&callback, double p1, int p2) const;
     };
 }

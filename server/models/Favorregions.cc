@@ -13,14 +13,14 @@ using namespace drogon;
 using namespace drogon::orm;
 using namespace drogon_model::travelapp;
 
-const std::string Favorregions::Cols::_uname = "uname";
+const std::string Favorregions::Cols::_uid = "uid";
 const std::string Favorregions::Cols::_rid = "rid";
-const std::vector<std::string> Favorregions::primaryKeyName = {"uname","rid"};
+const std::vector<std::string> Favorregions::primaryKeyName = {"uid","rid"};
 const bool Favorregions::hasPrimaryKey = true;
 const std::string Favorregions::tableName = "favorregions";
 
 const std::vector<typename Favorregions::MetaData> Favorregions::metaData_={
-{"uname","std::string","character varying",255,0,1,1},
+{"uid","int32_t","integer",4,0,1,1},
 {"rid","int32_t","integer",4,0,1,1}
 };
 const std::string &Favorregions::getColumnName(size_t index) noexcept(false)
@@ -32,9 +32,9 @@ Favorregions::Favorregions(const Row &r, const ssize_t indexOffset) noexcept
 {
     if(indexOffset < 0)
     {
-        if(!r["uname"].isNull())
+        if(!r["uid"].isNull())
         {
-            uname_=std::make_shared<std::string>(r["uname"].as<std::string>());
+            uid_=std::make_shared<int32_t>(r["uid"].as<int32_t>());
         }
         if(!r["rid"].isNull())
         {
@@ -53,7 +53,7 @@ Favorregions::Favorregions(const Row &r, const ssize_t indexOffset) noexcept
         index = offset + 0;
         if(!r[index].isNull())
         {
-            uname_=std::make_shared<std::string>(r[index].as<std::string>());
+            uid_=std::make_shared<int32_t>(r[index].as<int32_t>());
         }
         index = offset + 1;
         if(!r[index].isNull())
@@ -76,7 +76,7 @@ Favorregions::Favorregions(const Json::Value &pJson, const std::vector<std::stri
         dirtyFlag_[0] = true;
         if(!pJson[pMasqueradingVector[0]].isNull())
         {
-            uname_=std::make_shared<std::string>(pJson[pMasqueradingVector[0]].asString());
+            uid_=std::make_shared<int32_t>((int32_t)pJson[pMasqueradingVector[0]].asInt64());
         }
     }
     if(!pMasqueradingVector[1].empty() && pJson.isMember(pMasqueradingVector[1]))
@@ -91,12 +91,12 @@ Favorregions::Favorregions(const Json::Value &pJson, const std::vector<std::stri
 
 Favorregions::Favorregions(const Json::Value &pJson) noexcept(false)
 {
-    if(pJson.isMember("uname"))
+    if(pJson.isMember("uid"))
     {
         dirtyFlag_[0]=true;
-        if(!pJson["uname"].isNull())
+        if(!pJson["uid"].isNull())
         {
-            uname_=std::make_shared<std::string>(pJson["uname"].asString());
+            uid_=std::make_shared<int32_t>((int32_t)pJson["uid"].asInt64());
         }
     }
     if(pJson.isMember("rid"))
@@ -121,7 +121,7 @@ void Favorregions::updateByMasqueradedJson(const Json::Value &pJson,
     {
         if(!pJson[pMasqueradingVector[0]].isNull())
         {
-            uname_=std::make_shared<std::string>(pJson[pMasqueradingVector[0]].asString());
+            uid_=std::make_shared<int32_t>((int32_t)pJson[pMasqueradingVector[0]].asInt64());
         }
     }
     if(!pMasqueradingVector[1].empty() && pJson.isMember(pMasqueradingVector[1]))
@@ -135,11 +135,11 @@ void Favorregions::updateByMasqueradedJson(const Json::Value &pJson,
 
 void Favorregions::updateByJson(const Json::Value &pJson) noexcept(false)
 {
-    if(pJson.isMember("uname"))
+    if(pJson.isMember("uid"))
     {
-        if(!pJson["uname"].isNull())
+        if(!pJson["uid"].isNull())
         {
-            uname_=std::make_shared<std::string>(pJson["uname"].asString());
+            uid_=std::make_shared<int32_t>((int32_t)pJson["uid"].asInt64());
         }
     }
     if(pJson.isMember("rid"))
@@ -151,25 +151,20 @@ void Favorregions::updateByJson(const Json::Value &pJson) noexcept(false)
     }
 }
 
-const std::string &Favorregions::getValueOfUname() const noexcept
+const int32_t &Favorregions::getValueOfUid() const noexcept
 {
-    const static std::string defaultValue = std::string();
-    if(uname_)
-        return *uname_;
+    const static int32_t defaultValue = int32_t();
+    if(uid_)
+        return *uid_;
     return defaultValue;
 }
-const std::shared_ptr<std::string> &Favorregions::getUname() const noexcept
+const std::shared_ptr<int32_t> &Favorregions::getUid() const noexcept
 {
-    return uname_;
+    return uid_;
 }
-void Favorregions::setUname(const std::string &pUname) noexcept
+void Favorregions::setUid(const int32_t &pUid) noexcept
 {
-    uname_ = std::make_shared<std::string>(pUname);
-    dirtyFlag_[0] = true;
-}
-void Favorregions::setUname(std::string &&pUname) noexcept
-{
-    uname_ = std::make_shared<std::string>(std::move(pUname));
+    uid_ = std::make_shared<int32_t>(pUid);
     dirtyFlag_[0] = true;
 }
 
@@ -195,13 +190,13 @@ void Favorregions::updateId(const uint64_t id)
 }
 typename Favorregions::PrimaryKeyType Favorregions::getPrimaryKey() const
 {
-    return std::make_tuple(*uname_,*rid_);
+    return std::make_tuple(*uid_,*rid_);
 }
 
 const std::vector<std::string> &Favorregions::insertColumns() noexcept
 {
     static const std::vector<std::string> inCols={
-        "uname",
+        "uid",
         "rid"
     };
     return inCols;
@@ -211,9 +206,9 @@ void Favorregions::outputArgs(drogon::orm::internal::SqlBinder &binder) const
 {
     if(dirtyFlag_[0])
     {
-        if(getUname())
+        if(getUid())
         {
-            binder << getValueOfUname();
+            binder << getValueOfUid();
         }
         else
         {
@@ -251,9 +246,9 @@ void Favorregions::updateArgs(drogon::orm::internal::SqlBinder &binder) const
 {
     if(dirtyFlag_[0])
     {
-        if(getUname())
+        if(getUid())
         {
-            binder << getValueOfUname();
+            binder << getValueOfUid();
         }
         else
         {
@@ -275,13 +270,13 @@ void Favorregions::updateArgs(drogon::orm::internal::SqlBinder &binder) const
 Json::Value Favorregions::toJson() const
 {
     Json::Value ret;
-    if(getUname())
+    if(getUid())
     {
-        ret["uname"]=getValueOfUname();
+        ret["uid"]=getValueOfUid();
     }
     else
     {
-        ret["uname"]=Json::Value();
+        ret["uid"]=Json::Value();
     }
     if(getRid())
     {
@@ -302,9 +297,9 @@ Json::Value Favorregions::toMasqueradedJson(
     {
         if(!pMasqueradingVector[0].empty())
         {
-            if(getUname())
+            if(getUid())
             {
-                ret[pMasqueradingVector[0]]=getValueOfUname();
+                ret[pMasqueradingVector[0]]=getValueOfUid();
             }
             else
             {
@@ -325,13 +320,13 @@ Json::Value Favorregions::toMasqueradedJson(
         return ret;
     }
     LOG_ERROR << "Masquerade failed";
-    if(getUname())
+    if(getUid())
     {
-        ret["uname"]=getValueOfUname();
+        ret["uid"]=getValueOfUid();
     }
     else
     {
-        ret["uname"]=Json::Value();
+        ret["uid"]=Json::Value();
     }
     if(getRid())
     {
@@ -346,14 +341,14 @@ Json::Value Favorregions::toMasqueradedJson(
 
 bool Favorregions::validateJsonForCreation(const Json::Value &pJson, std::string &err)
 {
-    if(pJson.isMember("uname"))
+    if(pJson.isMember("uid"))
     {
-        if(!validJsonOfField(0, "uname", pJson["uname"], err, true))
+        if(!validJsonOfField(0, "uid", pJson["uid"], err, true))
             return false;
     }
     else
     {
-        err="The uname column cannot be null";
+        err="The uid column cannot be null";
         return false;
     }
     if(pJson.isMember("rid"))
@@ -414,9 +409,9 @@ bool Favorregions::validateMasqueradedJsonForCreation(const Json::Value &pJson,
 }
 bool Favorregions::validateJsonForUpdate(const Json::Value &pJson, std::string &err)
 {
-    if(pJson.isMember("uname"))
+    if(pJson.isMember("uid"))
     {
-        if(!validJsonOfField(0, "uname", pJson["uname"], err, false))
+        if(!validJsonOfField(0, "uid", pJson["uid"], err, false))
             return false;
     }
     else
@@ -488,20 +483,11 @@ bool Favorregions::validJsonOfField(size_t index,
                 err="The " + fieldName + " column cannot be null";
                 return false;
             }
-            if(!pJson.isString())
+            if(!pJson.isInt())
             {
                 err="Type error in the "+fieldName+" field";
                 return false;
             }
-            // asString().length() creates a string object, is there any better way to validate the length?
-            if(pJson.isString() && pJson.asString().length() > 255)
-            {
-                err="String length exceeds limit for the " +
-                    fieldName +
-                    " field (the maximum value is 255)";
-                return false;
-            }
-
             break;
         case 1:
             if(pJson.isNull())

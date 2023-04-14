@@ -1,16 +1,7 @@
-/**
- * @file TravelApp_Note.cc
- * @author Li Jiawen (nmjbh@qq.com)
- * @brief 
- * @version 1.0
- * @date 2023-04-01
- * 
- * @copyright Copyright (c) 2023
- * 
- */
 #include "TravelApp_Note.h"
 #include "Note.h"
 #include "NoteDetail.h"
+#include "Traveler.h"
 #include "Signer.h"
 
 #include <Poco/JWT/Token.h>
@@ -51,11 +42,21 @@ void Note::getNoteDetail(const HttpRequestPtr &req, std::function<void(const Htt
     LOG_INFO << "getNoteDetail Called!";
     auto db = drogon::app().getDbClient("Aliyun");
     Mapper<drogon_model::travelapp::NoteDetail> NoteDetailMapper(db);
+    Mapper<drogon_model::travelapp::Traveler> userMapper(db);
+
     Json::Value ret;
     try {
         auto detail = NoteDetailMapper.findByPrimaryKey(
                 drogon_model::travelapp::NoteDetail::PrimaryKeyType{nid});
+        auto author = userMapper
+                .findOne(Criteria("uid", CompareOperator::EQ, detail.getValueOfUid()));
         ret = detail.toJson();
+
+        // get user infomation
+        ret.removeMember("rid");
+        ret["uname"]=author.getValueOfUname();
+        ret["upic"]=author.getValueOfUpic();
+
         std::string content = ret["content"].asString();
 
         Json::Reader reader;
@@ -87,7 +88,8 @@ void Note::uploadNote(const HttpRequestPtr &req, std::function<void(const HttpRe
     std::string jwt = (*json)["token"].asString();
     Signer signer(SIGN_KEY);
     Token token = signer.verify(jwt);
-    std::string uname = token.payload().get("uname");
+    int uid = token.payload().get("uid");
+
 
     auto db = drogon::app().getDbClient("Aliyun");
     Mapper<drogon_model::travelapp::Note> noteMapper(db);
@@ -118,13 +120,14 @@ void Note::uploadNote(const HttpRequestPtr &req, std::function<void(const HttpRe
 
     // Build Note Detail Object
     // Construct WriterBuilder
+    // json -> string
     Json::StreamWriterBuilder builder;
     builder["emitUTF8"] = true;
 
     noteDetail.setTitle((*json)["detail"]["title"].asString());
     noteDetail.setBackground((*json)["detail"]["background"].asString());
-    noteDetail.setUname(uname);
     noteDetail.setTime(trantor::Date::date());
+    noteDetail.setUid(uid);
     std::string content_string{Poco::replace(writeString(builder, content), "\n", "")};
     std::string content_result{Poco::replace(content_string, "\t", "")};
     noteDetail.setContent(content_result);

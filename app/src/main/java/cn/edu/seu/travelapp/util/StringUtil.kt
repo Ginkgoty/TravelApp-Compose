@@ -1,12 +1,4 @@
 package cn.edu.seu.travelapp.util
-/**
- * StringUtil.kt
- *
- * This file is util to convert digits to string
- *
- * @author Li Jiawen
- * @mail nmjbh@qq.com
- */
 
 object StringUtil {
 

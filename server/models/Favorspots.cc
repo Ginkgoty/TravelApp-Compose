@@ -13,14 +13,14 @@ using namespace drogon;
 using namespace drogon::orm;
 using namespace drogon_model::travelapp;
 
-const std::string Favorspots::Cols::_uname = "uname";
+const std::string Favorspots::Cols::_uid = "uid";
 const std::string Favorspots::Cols::_sid = "sid";
-const std::vector<std::string> Favorspots::primaryKeyName = {"uname","sid"};
+const std::vector<std::string> Favorspots::primaryKeyName = {"uid","sid"};
 const bool Favorspots::hasPrimaryKey = true;
 const std::string Favorspots::tableName = "favorspots";
 
 const std::vector<typename Favorspots::MetaData> Favorspots::metaData_={
-{"uname","std::string","character varying",255,0,1,1},
+{"uid","int32_t","integer",4,0,1,1},
 {"sid","int32_t","integer",4,0,1,1}
 };
 const std::string &Favorspots::getColumnName(size_t index) noexcept(false)
@@ -32,9 +32,9 @@ Favorspots::Favorspots(const Row &r, const ssize_t indexOffset) noexcept
 {
     if(indexOffset < 0)
     {
-        if(!r["uname"].isNull())
+        if(!r["uid"].isNull())
         {
-            uname_=std::make_shared<std::string>(r["uname"].as<std::string>());
+            uid_=std::make_shared<int32_t>(r["uid"].as<int32_t>());
         }
         if(!r["sid"].isNull())
         {
@@ -53,7 +53,7 @@ Favorspots::Favorspots(const Row &r, const ssize_t indexOffset) noexcept
         index = offset + 0;
         if(!r[index].isNull())
         {
-            uname_=std::make_shared<std::string>(r[index].as<std::string>());
+            uid_=std::make_shared<int32_t>(r[index].as<int32_t>());
         }
         index = offset + 1;
         if(!r[index].isNull())
@@ -76,7 +76,7 @@ Favorspots::Favorspots(const Json::Value &pJson, const std::vector<std::string> 
         dirtyFlag_[0] = true;
         if(!pJson[pMasqueradingVector[0]].isNull())
         {
-            uname_=std::make_shared<std::string>(pJson[pMasqueradingVector[0]].asString());
+            uid_=std::make_shared<int32_t>((int32_t)pJson[pMasqueradingVector[0]].asInt64());
         }
     }
     if(!pMasqueradingVector[1].empty() && pJson.isMember(pMasqueradingVector[1]))
@@ -91,12 +91,12 @@ Favorspots::Favorspots(const Json::Value &pJson, const std::vector<std::string> 
 
 Favorspots::Favorspots(const Json::Value &pJson) noexcept(false)
 {
-    if(pJson.isMember("uname"))
+    if(pJson.isMember("uid"))
     {
         dirtyFlag_[0]=true;
-        if(!pJson["uname"].isNull())
+        if(!pJson["uid"].isNull())
         {
-            uname_=std::make_shared<std::string>(pJson["uname"].asString());
+            uid_=std::make_shared<int32_t>((int32_t)pJson["uid"].asInt64());
         }
     }
     if(pJson.isMember("sid"))
@@ -121,7 +121,7 @@ void Favorspots::updateByMasqueradedJson(const Json::Value &pJson,
     {
         if(!pJson[pMasqueradingVector[0]].isNull())
         {
-            uname_=std::make_shared<std::string>(pJson[pMasqueradingVector[0]].asString());
+            uid_=std::make_shared<int32_t>((int32_t)pJson[pMasqueradingVector[0]].asInt64());
         }
     }
     if(!pMasqueradingVector[1].empty() && pJson.isMember(pMasqueradingVector[1]))
@@ -135,11 +135,11 @@ void Favorspots::updateByMasqueradedJson(const Json::Value &pJson,
 
 void Favorspots::updateByJson(const Json::Value &pJson) noexcept(false)
 {
-    if(pJson.isMember("uname"))
+    if(pJson.isMember("uid"))
     {
-        if(!pJson["uname"].isNull())
+        if(!pJson["uid"].isNull())
         {
-            uname_=std::make_shared<std::string>(pJson["uname"].asString());
+            uid_=std::make_shared<int32_t>((int32_t)pJson["uid"].asInt64());
         }
     }
     if(pJson.isMember("sid"))
@@ -151,25 +151,20 @@ void Favorspots::updateByJson(const Json::Value &pJson) noexcept(false)
     }
 }
 
-const std::string &Favorspots::getValueOfUname() const noexcept
+const int32_t &Favorspots::getValueOfUid() const noexcept
 {
-    const static std::string defaultValue = std::string();
-    if(uname_)
-        return *uname_;
+    const static int32_t defaultValue = int32_t();
+    if(uid_)
+        return *uid_;
     return defaultValue;
 }
-const std::shared_ptr<std::string> &Favorspots::getUname() const noexcept
+const std::shared_ptr<int32_t> &Favorspots::getUid() const noexcept
 {
-    return uname_;
+    return uid_;
 }
-void Favorspots::setUname(const std::string &pUname) noexcept
+void Favorspots::setUid(const int32_t &pUid) noexcept
 {
-    uname_ = std::make_shared<std::string>(pUname);
-    dirtyFlag_[0] = true;
-}
-void Favorspots::setUname(std::string &&pUname) noexcept
-{
-    uname_ = std::make_shared<std::string>(std::move(pUname));
+    uid_ = std::make_shared<int32_t>(pUid);
     dirtyFlag_[0] = true;
 }
 
@@ -195,13 +190,13 @@ void Favorspots::updateId(const uint64_t id)
 }
 typename Favorspots::PrimaryKeyType Favorspots::getPrimaryKey() const
 {
-    return std::make_tuple(*uname_,*sid_);
+    return std::make_tuple(*uid_,*sid_);
 }
 
 const std::vector<std::string> &Favorspots::insertColumns() noexcept
 {
     static const std::vector<std::string> inCols={
-        "uname",
+        "uid",
         "sid"
     };
     return inCols;
@@ -211,9 +206,9 @@ void Favorspots::outputArgs(drogon::orm::internal::SqlBinder &binder) const
 {
     if(dirtyFlag_[0])
     {
-        if(getUname())
+        if(getUid())
         {
-            binder << getValueOfUname();
+            binder << getValueOfUid();
         }
         else
         {
@@ -251,9 +246,9 @@ void Favorspots::updateArgs(drogon::orm::internal::SqlBinder &binder) const
 {
     if(dirtyFlag_[0])
     {
-        if(getUname())
+        if(getUid())
         {
-            binder << getValueOfUname();
+            binder << getValueOfUid();
         }
         else
         {
@@ -275,13 +270,13 @@ void Favorspots::updateArgs(drogon::orm::internal::SqlBinder &binder) const
 Json::Value Favorspots::toJson() const
 {
     Json::Value ret;
-    if(getUname())
+    if(getUid())
     {
-        ret["uname"]=getValueOfUname();
+        ret["uid"]=getValueOfUid();
     }
     else
     {
-        ret["uname"]=Json::Value();
+        ret["uid"]=Json::Value();
     }
     if(getSid())
     {
@@ -302,9 +297,9 @@ Json::Value Favorspots::toMasqueradedJson(
     {
         if(!pMasqueradingVector[0].empty())
         {
-            if(getUname())
+            if(getUid())
             {
-                ret[pMasqueradingVector[0]]=getValueOfUname();
+                ret[pMasqueradingVector[0]]=getValueOfUid();
             }
             else
             {
@@ -325,13 +320,13 @@ Json::Value Favorspots::toMasqueradedJson(
         return ret;
     }
     LOG_ERROR << "Masquerade failed";
-    if(getUname())
+    if(getUid())
     {
-        ret["uname"]=getValueOfUname();
+        ret["uid"]=getValueOfUid();
     }
     else
     {
-        ret["uname"]=Json::Value();
+        ret["uid"]=Json::Value();
     }
     if(getSid())
     {
@@ -346,14 +341,14 @@ Json::Value Favorspots::toMasqueradedJson(
 
 bool Favorspots::validateJsonForCreation(const Json::Value &pJson, std::string &err)
 {
-    if(pJson.isMember("uname"))
+    if(pJson.isMember("uid"))
     {
-        if(!validJsonOfField(0, "uname", pJson["uname"], err, true))
+        if(!validJsonOfField(0, "uid", pJson["uid"], err, true))
             return false;
     }
     else
     {
-        err="The uname column cannot be null";
+        err="The uid column cannot be null";
         return false;
     }
     if(pJson.isMember("sid"))
@@ -414,9 +409,9 @@ bool Favorspots::validateMasqueradedJsonForCreation(const Json::Value &pJson,
 }
 bool Favorspots::validateJsonForUpdate(const Json::Value &pJson, std::string &err)
 {
-    if(pJson.isMember("uname"))
+    if(pJson.isMember("uid"))
     {
-        if(!validJsonOfField(0, "uname", pJson["uname"], err, false))
+        if(!validJsonOfField(0, "uid", pJson["uid"], err, false))
             return false;
     }
     else
@@ -488,20 +483,11 @@ bool Favorspots::validJsonOfField(size_t index,
                 err="The " + fieldName + " column cannot be null";
                 return false;
             }
-            if(!pJson.isString())
+            if(!pJson.isInt())
             {
                 err="Type error in the "+fieldName+" field";
                 return false;
             }
-            // asString().length() creates a string object, is there any better way to validate the length?
-            if(pJson.isString() && pJson.asString().length() > 255)
-            {
-                err="String length exceeds limit for the " +
-                    fieldName +
-                    " field (the maximum value is 255)";
-                return false;
-            }
-
             break;
         case 1:
             if(pJson.isNull())

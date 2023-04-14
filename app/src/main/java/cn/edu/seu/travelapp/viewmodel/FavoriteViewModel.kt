@@ -1,11 +1,3 @@
-/**
- * FavoriteViewModel.kt
- *
- * This file is ViewModel of favorite view
- *
- * @author Li Jiawen
- * @mail nmjbh@qq.com
- */
 package cn.edu.seu.travelapp.viewmodel
 
 import android.util.Log
@@ -16,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.edu.seu.travelapp.api.DetailApi
 import cn.edu.seu.travelapp.api.FavoriteApi
+import cn.edu.seu.travelapp.api.PictxtApi
 import cn.edu.seu.travelapp.api.SpotApi
 import cn.edu.seu.travelapp.model.Detail
 import cn.edu.seu.travelapp.model.Region
@@ -110,6 +103,7 @@ class FavoriteViewModel : ViewModel() {
             )
         }
     }
+
     fun spotInRegionClicked(spot: Spot) {
         getDetail(spot.sid)
         _uiState.update {
@@ -165,5 +159,69 @@ class FavoriteViewModel : ViewModel() {
             }
         }
     }
+
+    val opState = mutableStateOf(true)
+
+    fun favSpot(sid: Int, token: String) {
+        viewModelScope.launch {
+            val favoriteApi = FavoriteApi.getInstance()
+            try {
+                opState.value = favoriteApi.favspot(sid, Token(token)).result
+            } catch (e: Exception) {
+                errorMessage = e.message.toString()
+                Log.d("Error", errorMessage)
+            }
+        }
+    }
+
+    fun unfavSpot(sid: Int, token: String) {
+        viewModelScope.launch {
+            val favoriteApi = FavoriteApi.getInstance()
+            try {
+                opState.value = favoriteApi.unfavspot(sid, Token(token)).result
+            } catch (e: Exception) {
+                errorMessage = e.message.toString()
+                Log.d("Error", errorMessage)
+            }
+        }
+    }
+
+    fun favRegion(rid: Int, token: String) {
+        viewModelScope.launch {
+            val favoriteApi = FavoriteApi.getInstance()
+            try {
+                opState.value = favoriteApi.favregion(rid, Token(token)).result
+            } catch (e: Exception) {
+                errorMessage = e.message.toString()
+                Log.d("Error", errorMessage)
+            }
+        }
+    }
+
+    fun unfavRegion(rid: Int, token: String) {
+        viewModelScope.launch {
+            val favoriteApi = FavoriteApi.getInstance()
+            try {
+                opState.value = favoriteApi.unfavregion(rid, Token(token)).result
+            } catch (e: Exception) {
+                errorMessage = e.message.toString()
+                Log.d("Error", errorMessage)
+            }
+        }
+    }
+
+    val query = mutableStateOf(false)
+    fun isFavSpot(sid: Int, token: String) {
+        viewModelScope.launch {
+            val favoriteApi = FavoriteApi.getInstance()
+            try {
+                query.value = favoriteApi.checkspot(sid, Token(token)).result
+            } catch (e: Exception) {
+                errorMessage = e.message.toString()
+                Log.d("Error", errorMessage)
+            }
+        }
+    }
+
 
 }

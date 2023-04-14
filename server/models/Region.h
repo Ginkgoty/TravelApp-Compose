@@ -46,6 +46,7 @@ class Region
         static const std::string _rname;
         static const std::string _intro;
         static const std::string _pic;
+        static const std::string _view;
     };
 
     const static int primaryKeyNumber;
@@ -132,8 +133,16 @@ class Region
     void setPic(const std::string &pPic) noexcept;
     void setPic(std::string &&pPic) noexcept;
 
+    /**  For column view  */
+    ///Get the value of the column view, returns the default value if the column is null
+    const int32_t &getValueOfView() const noexcept;
+    ///Return a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null
+    const std::shared_ptr<int32_t> &getView() const noexcept;
+    ///Set the value of the column view
+    void setView(const int32_t &pView) noexcept;
 
-    static size_t getColumnNumber() noexcept {  return 4;  }
+
+    static size_t getColumnNumber() noexcept {  return 5;  }
     static const std::string &getColumnName(size_t index) noexcept(false);
 
     Json::Value toJson() const;
@@ -154,6 +163,7 @@ class Region
     std::shared_ptr<std::string> rname_;
     std::shared_ptr<std::string> intro_;
     std::shared_ptr<std::string> pic_;
+    std::shared_ptr<int32_t> view_;
     struct MetaData
     {
         const std::string colName_;
@@ -165,7 +175,7 @@ class Region
         const bool notNull_;
     };
     static const std::vector<MetaData> metaData_;
-    bool dirtyFlag_[4]={ false };
+    bool dirtyFlag_[5]={ false };
   public:
     static const std::string &sqlForFindingByPrimaryKey()
     {
@@ -203,6 +213,11 @@ class Region
             sql += "pic,";
             ++parametersCount;
         }
+        if(dirtyFlag_[4])
+        {
+            sql += "view,";
+            ++parametersCount;
+        }
         if(parametersCount > 0)
         {
             sql[sql.length()-1]=')';
@@ -230,6 +245,11 @@ class Region
             sql.append(placeholderStr, n);
         }
         if(dirtyFlag_[3])
+        {
+            n = sprintf(placeholderStr,"$%d,",placeholder++);
+            sql.append(placeholderStr, n);
+        }
+        if(dirtyFlag_[4])
         {
             n = sprintf(placeholderStr,"$%d,",placeholder++);
             sql.append(placeholderStr, n);

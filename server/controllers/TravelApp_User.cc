@@ -1,13 +1,3 @@
-/**
- * @file TravelApp_User.cc
- * @author Li Jiawen (nmjbh@qq.com)
- * @brief 
- * @version 1.0
- * @date 2023-04-01
- * 
- * @copyright Copyright (c) 2023
- * 
- */
 #include "TravelApp_User.h"
 #include "Traveler.h"
 #include "Signer.h"
@@ -31,11 +21,11 @@ std::string SHA1(const std::string &origin) {
     return Poco::DigestEngine::digestToHex(sha1.digest());
 }
 
-std::string generateToken(const std::string &uname) {
+std::string generateToken(const int uid, const std::string &uname) {
     Token token;
     token.setType("JWT");
     token.setSubject("User Info");
-    token.payload().set("uname", uname);
+    token.payload().set("uid", uid).set("uname", uname);
     token.setIssuedAt(Poco::Timestamp());
 
     Signer signer(SIGN_KEY);
@@ -48,20 +38,30 @@ void User::sign_up(const HttpRequestPtr &req,
                    const std::string &uname,
                    const std::string &pwd) {
     LOG_INFO << "Sign up called!";
+
+    static int uid = 10000000;
+    std::mutex u_mutex;
+
     auto db = drogon::app().getDbClient("Aliyun");
     Mapper<drogon_model::travelapp::Traveler> userMapper(db);
     try {
         auto result = userMapper.findOne(Criteria("uname", CompareOperator::EQ, uname));
     }
     catch (DrogonDbException &e) {
+        Json::Value ret;
         LOG_INFO << e.base().what();
         auto user = drogon_model::travelapp::Traveler();
+        u_mutex.lock();
+        user.setUid(uid);
+        ret["token"] = generateToken(uid, uname);
+        uid += 1;
+        u_mutex.unlock();
         user.setUname(uname);
         user.setPwd(SHA1(pwd));
+        user.setUpic("https://118.31.67.238/gallary/default.jpg");
         userMapper.insert(user);
-        Json::Value ret;
         ret["result"] = "sign-up success!";
-        ret["token"] = generateToken(uname);
+        ret["upic"] = "https://118.31.67.238/gallary/default.jpg";
         auto resp = HttpResponse::newHttpJsonResponse(ret);
         callback(resp);
     }
@@ -83,7 +83,8 @@ void User::sign_in(const HttpRequestPtr &req, std::function<void(const HttpRespo
         result = userMapper.findOne(Criteria("uname", CompareOperator::EQ, uname));
         if (result.getValueOfPwd() == SHA1(pwd)) {
             ret["result"] = "Sign-in success!";
-            ret["token"] = generateToken(uname);
+            ret["token"] = generateToken(result.getValueOfUid(), uname);
+            ret["upic"] = result.getValueOfUpic();
             auto resp = HttpResponse::newHttpJsonResponse(ret);
             callback(resp);
         } else {
@@ -157,7 +158,9 @@ void User::change_uname(const HttpRequestPtr &req, std::function<void(const Http
         userMapper.updateBy({"uname"},
                             Criteria("uname", CompareOperator::EQ, old_uname), uname);
 
-        ret["token"] = generateToken(uname);
+        result = userMapper.findOne(Criteria("uname", CompareOperator::EQ, uname));
+
+        ret["token"] = generateToken(result.getValueOfUid(), uname);
         auto resp = HttpResponse::newHttpJsonResponse(ret);
         callback(resp);
     }
@@ -167,4 +170,46 @@ void User::change_uname(const HttpRequestPtr &req, std::function<void(const Http
         resp->setStatusCode(drogon::k500InternalServerError);
         callback(resp);
     }
+}
+
+void User::change_upic(const HttpRequestPtr &req, std::function<void(const HttpResponsePtr &)> &&callback,
+                       const std::string &upic) {
+    LOG_INFO << "change upic called!";
+
+    auto db = drogon::app().getDbClient("Aliyun");
+    Mapper<drogon_model::travelapp::Traveler> userMapper(db);
+
+    auto json = req->getJsonObject();
+    std::string jwt = (*json)["token"].asString();
+    Signer signer(SIGN_KEY);
+    Token token = signer.verify(jwt);
+    int uid = token.payload().get("uid");
+
+    userMapper.updateBy(
+            {"upic"},
+            [callback](const size_t size) {
+                if (size != 0) {
+                    Json::Value ret;
+                    ret["result"] = true;
+                    auto resp = HttpResponse::newHttpJsonResponse(ret);
+                    callback(resp);
+                }else{
+                    Json::Value ret;
+                    ret["result"] = false;
+                    auto resp = HttpResponse::newHttpJsonResponse(ret);
+                    callback(resp);
+                }
+            },
+            [callback](const DrogonDbException &e) {
+                Json::Value ret;
+                ret["result"] = false;
+                auto resp = HttpResponse::newHttpJsonResponse(ret);
+                resp->setStatusCode(drogon::k500InternalServerError);
+                callback(resp);
+            },
+            Criteria("uid", uid),
+            upic
+    );
+
+
 }

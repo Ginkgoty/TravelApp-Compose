@@ -1,13 +1,3 @@
-/**
- * @file TravelApp_Spot.cc
- * @author Li Jiawen (nmjbh@qq.com)
- * @brief 
- * @version 1.0
- * @date 2023-04-01
- * 
- * @copyright Copyright (c) 2023
- * 
- */
 #include "TravelApp_Spot.h"
 #include "Detail.h"
 

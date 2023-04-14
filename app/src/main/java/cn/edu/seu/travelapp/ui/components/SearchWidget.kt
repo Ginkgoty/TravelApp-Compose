@@ -1,10 +1,3 @@
-/**
- * SearchWidget.kt
- *
- * This file is ui of search results
- * @author Li Jiawen
- * @mail   nmjbh@qq.com
- */
 package cn.edu.seu.travelapp.ui.components
 
 import androidx.compose.foundation.layout.*
@@ -25,6 +18,7 @@ import cn.edu.seu.travelapp.viewmodel.ExploreViewModel
 @Composable
 fun SearchWidget(
     exploreViewModel: ExploreViewModel,
+    token: String,
     paddingValues: PaddingValues
 ) {
     Column() {
@@ -52,7 +46,7 @@ fun SearchWidget(
                             elevation = 4.dp
                         ) {
                             RegionOutline(region = item, onRegionClicked = {
-                                exploreViewModel.resultRegionClicked(item)
+                                exploreViewModel.resultRegionClicked(item, token)
                             })
                             Spacer(modifier = Modifier.size(5.dp))
                         }
@@ -84,7 +78,7 @@ fun SearchWidget(
                             elevation = 4.dp
                         ) {
                             SpotOutline(spot = item, onSpotClicked = {
-                                exploreViewModel.resultSpotClicked(item)
+                                exploreViewModel.resultSpotClicked(item, token)
                             })
                             Spacer(modifier = Modifier.size(5.dp))
                         }

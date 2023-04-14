@@ -1,19 +1,9 @@
-/**
- * HomeView.kt
- *
- * This file contains the entire ui of the Home view
- *
- * @author Li Jiawen
- * @mail nmjbh@qq.com
- */
 package cn.edu.seu.travelapp.ui.view
 
-import android.widget.Space
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -22,10 +12,8 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.Font
@@ -35,37 +23,26 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastForEachIndexed
-import androidx.compose.ui.window.DialogProperties
-import androidx.datastore.dataStore
 import cn.edu.seu.travelapp.R
-import cn.edu.seu.travelapp.data.TokenStorage
-import cn.edu.seu.travelapp.model.NoteItem
-import cn.edu.seu.travelapp.ui.components.NoteDetial
-import cn.edu.seu.travelapp.ui.components.NoteEditor
-import cn.edu.seu.travelapp.ui.components.NoteList
-import cn.edu.seu.travelapp.ui.components.RetryPromptView
+import cn.edu.seu.travelapp.ui.components.*
 import cn.edu.seu.travelapp.ui.state.HomeViewContentState
 import cn.edu.seu.travelapp.ui.state.TravelAppState
 import cn.edu.seu.travelapp.viewmodel.HomeViewModel
-import cn.edu.seu.travelapp.viewmodel.HomeViewState
 import kotlinx.coroutines.launch
 
 @Composable
 fun HomeView(
     homeViewModel: HomeViewModel,
     travelAppState: TravelAppState,
-    datastore: TokenStorage,
-    paddingValues: PaddingValues
+    paddingValues: PaddingValues,
+    token: String
 ) {
     val homeViewState = homeViewModel.uiState.collectAsState()
     val scrollState = rememberScrollState()
     val scope = rememberCoroutineScope()
 
-    travelAppState.bottomBarState.value = true
-
     when (homeViewState.value.homeViewContentState) {
         HomeViewContentState.NOTE_LIST -> {
-            travelAppState.bottomBarState.value = true
             BackHandler(enabled = true) {
 
             }
@@ -80,14 +57,18 @@ fun HomeView(
                 NoteList(
                     noteList = homeViewModel.noteList,
                     homeViewModel = homeViewModel,
-                    paddingValues = paddingValues
+                    paddingValues = paddingValues,
+                    token = token
                 )
             }
         }
         HomeViewContentState.NOTE_DETAIL -> {
             BackHandler(enabled = true) {
                 homeViewModel.updateContentState(HomeViewContentState.NOTE_LIST)
+                travelAppState.bottomBarState.value = true
             }
+            // close bar temporarily
+            travelAppState.bottomBarState.value = false
             if (homeViewState.value.drawerState.isOpen) {
                 ModalDrawer(
                     drawerState = homeViewState.value.drawerState,
@@ -151,69 +132,45 @@ fun HomeView(
                 )
             }
         }
-        HomeViewContentState.NOTE_EDITOR -> {
-            travelAppState.bottomBarState.value = false;
-            if (travelAppState.isLogin.value) {
-                NoteEditor(
-                    dataStore = datastore,
-                    homeViewModel = homeViewModel
-                )
-            } else {
-                AlertDialog(
-                    title = {
-                        Text(text = "Hint")
-                    },
-                    text = {
-                        Text(text = "您还未登录，请先登录！")
-                    },
-                    onDismissRequest = {
-                        homeViewModel.updateContentState(HomeViewContentState.NOTE_LIST)
-                        travelAppState.bottomBarState.value = true
-                    },
-                    buttons = {
-                        Row(
-                            modifier = Modifier.padding(all = 8.dp),
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Button(
-                                modifier = Modifier.fillMaxWidth(),
-                                onClick = {
-                                    homeViewModel.updateContentState(HomeViewContentState.NOTE_LIST)
-                                    travelAppState.bottomBarState.value = true
-                                }
-                            ) {
-                                Text("好")
-                            }
-                        }
-                    }
-                )
-            }
-
+        HomeViewContentState.PICTXT_LIST -> {
+            PictxtList(
+                token = token,
+                homeViewModel = homeViewModel,
+                travelAppState = travelAppState,
+                paddingValues = paddingValues
+            )
         }
+        HomeViewContentState.PICTXT_DETAIL -> {
+            PictxtDetail(
+                token = token,
+                homeViewModel = homeViewModel,
+                travelAppState = travelAppState
+            )
+        }
+        else -> {}
     }
 }
 
 
 @Composable
 fun HomeAppBar(
-    homeViewModel: HomeViewModel
+    homeViewModel: HomeViewModel,
+    travelAppState: TravelAppState
 ) {
     val homeViewState = homeViewModel.uiState.collectAsState()
     when (homeViewState.value.homeViewContentState) {
-        HomeViewContentState.NOTE_LIST -> {
-            NoteAppBar(
-                homeViewModel = homeViewModel
-            )
+        HomeViewContentState.NOTE_LIST, HomeViewContentState.PICTXT_LIST -> {
+            NoteAppBar()
         }
         HomeViewContentState.NOTE_DETAIL -> {
             NoteDetailAppBar(
                 homeViewModel = homeViewModel,
-                drawerState = homeViewState.value.drawerState
+                drawerState = homeViewState.value.drawerState,
+                travelAppState = travelAppState
             )
         }
-        HomeViewContentState.NOTE_EDITOR -> {
-
-        }
+        HomeViewContentState.PICTXT_DETAIL -> {}
+        else -> {}
     }
 
 }
@@ -221,7 +178,6 @@ fun HomeAppBar(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteAppBar(
-    homeViewModel: HomeViewModel
 ) {
     CenterAlignedTopAppBar(
         title = {
@@ -234,31 +190,16 @@ fun NoteAppBar(
         },
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
             containerColor = MaterialTheme.colors.primary,
-        ),
-        actions = {
-            IconButton(
-                onClick = {
-                    homeViewModel.updateContentState(
-                        HomeViewContentState.NOTE_EDITOR
-                    )
-                    homeViewModel.myNoteContentListInit()
-                }) {
-                Icon(
-                    imageVector = Icons.Filled.EditNote,
-                    contentDescription = "Icon",
-                    tint = Color.White,
-                )
-            }
-        }
+        )
     )
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NoteDetailAppBar(
     homeViewModel: HomeViewModel,
     drawerState: DrawerState,
+    travelAppState: TravelAppState
 ) {
     val scope = rememberCoroutineScope()
     CenterAlignedTopAppBar(
@@ -276,6 +217,7 @@ fun NoteDetailAppBar(
         navigationIcon = {
             IconButton(onClick = {
                 homeViewModel.updateContentState(HomeViewContentState.NOTE_LIST)
+                travelAppState.bottomBarState.value = true
             }) {
                 Icon(
                     imageVector = Icons.Filled.ArrowBack,

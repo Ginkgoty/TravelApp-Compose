@@ -44,7 +44,7 @@ class NoteDetail
     {
         static const std::string _nid;
         static const std::string _background;
-        static const std::string _uname;
+        static const std::string _uid;
         static const std::string _time;
         static const std::string _title;
         static const std::string _content;
@@ -116,14 +116,13 @@ class NoteDetail
     void setBackground(const std::string &pBackground) noexcept;
     void setBackground(std::string &&pBackground) noexcept;
 
-    /**  For column uname  */
-    ///Get the value of the column uname, returns the default value if the column is null
-    const std::string &getValueOfUname() const noexcept;
+    /**  For column uid  */
+    ///Get the value of the column uid, returns the default value if the column is null
+    const int32_t &getValueOfUid() const noexcept;
     ///Return a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null
-    const std::shared_ptr<std::string> &getUname() const noexcept;
-    ///Set the value of the column uname
-    void setUname(const std::string &pUname) noexcept;
-    void setUname(std::string &&pUname) noexcept;
+    const std::shared_ptr<int32_t> &getUid() const noexcept;
+    ///Set the value of the column uid
+    void setUid(const int32_t &pUid) noexcept;
 
     /**  For column time  */
     ///Get the value of the column time, returns the default value if the column is null
@@ -171,7 +170,7 @@ class NoteDetail
     void updateId(const uint64_t id);
     std::shared_ptr<int32_t> nid_;
     std::shared_ptr<std::string> background_;
-    std::shared_ptr<std::string> uname_;
+    std::shared_ptr<int32_t> uid_;
     std::shared_ptr<::trantor::Date> time_;
     std::shared_ptr<std::string> title_;
     std::shared_ptr<std::string> content_;
@@ -216,7 +215,7 @@ class NoteDetail
         }
         if(dirtyFlag_[2])
         {
-            sql += "uname,";
+            sql += "uid,";
             ++parametersCount;
         }
         if(dirtyFlag_[3])

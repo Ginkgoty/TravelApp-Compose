@@ -1,11 +1,3 @@
-/**
- * NoteDetail.kt
- *
- * Data class of note detail
- * @author Li Jiawen
- * @mail   nmjbh@qq.com
- *
- */
 package cn.edu.seu.travelapp.model
 
 /**
@@ -24,6 +16,7 @@ data class NoteDetail(
     val nid: Int,
     val background: String,
     val uname: String,
+    val upic: String,
     val time: String,
     val title: String,
     val content: ArrayList<NoteItem>

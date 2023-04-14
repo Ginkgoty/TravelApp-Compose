@@ -1,11 +1,3 @@
-/**
- * HashUtil.kt
- *
- * This file use for hashing
- *
- * @author Li Jiawen
- * @mail nmjbh@qq.com
- */
 package cn.edu.seu.travelapp.util
 
 import android.content.ContentResolver

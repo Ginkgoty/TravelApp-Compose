@@ -6,6 +6,7 @@ import execjs
 import json
 from requests import utils
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from urllib3 import disable_warnings
 from urllib3.exceptions import InsecureRequestWarning
 import psycopg2
@@ -22,19 +23,43 @@ spt_base_url = 'https://www.mafengwo.cn/poi/{}.html'
 
 region_base_url = 'https://www.mafengwo.cn/jd/{}/gonglve.html'
 
+food_base_url = 'https://www.mafengwo.cn/cy/{}/gonglve.html'
+
+base_url = 'https://www.mafengwo.cn'
+
 regions = [
-    '北京',
-    '上海',
-    '成都', '西安', '重庆',
-    '杭州', '苏州', '南京', '丽江',
-    '大理',
+    '北京', '上海', '成都', '西安', '重庆',
+    '杭州', '苏州', '南京', '丽江', '大理',
     '桂林', '厦门', '三亚', '拉萨', '青岛',
     '张家界', '呼伦贝尔', '武汉', '乌鲁木齐', '洛阳',
+
     '开封', '长沙', '南昌', '贵阳', '昆明',
     '太原', '兰州', '敦煌', '西宁', '广州',
     '深圳', '哈尔滨', '长春', '沈阳',
-    '香港', '澳门'
+    '香港', '澳门',
+
+    '峨眉山市', '延安', '福州', '南宁', '雪乡',
+    '伊犁', '扬州', '乌镇', '台北', '青海湖',
+    '大连', '海拉尔', '北海', '宁波', '威海',
+    '黄山', '九寨沟', '舟山', '敦煌', '长白山',
+    '阳朔', '稻城', '济南', '珠海', '香格里拉',
+    '黔东南', '长滩岛', '腾冲', '漠河', '张家口', '博鳌'
 ]
+
+recommend = {
+    "香港": 1, "三亚": 1, "广州": 1, "昆明": 1, "深圳": 1,
+    "南京": 2, "峨眉山市": 2, "延安": 2, "福州": 2, "南宁": 2, "雪乡": 2,
+    "杭州": 3, "重庆": 3, "西安": 3, "苏州": 3, "洛阳": 3,
+    "大理": 4, "乌鲁木齐": 4, "伊犁": 4, "开封": 4, "扬州": 4,
+    "厦门": 5, "青岛": 5, "拉萨": 5, "乌镇": 5, "沈阳": 5,
+    "台北": 6, "青海湖": 6, "呼伦贝尔": 6, "大连": 6,
+    "海拉尔": 7, "贵阳": 7, "北海": 7, "宁波": 7, "威海": 7,
+    "黄山": 8, "九寨沟": 8, "舟山": 8, "敦煌": 8, "长白山": 8,
+    "桂林": 9, "长沙": 9, "阳朔": 9, "稻城": 9, "济南": 9,
+    "珠海": 10, "香格里拉": 10, "西宁": 10, "丽江": 10, "武汉": 10,
+    "北京": 11, "海口": 11, "黔东南": 11, "长滩岛": 11, "腾冲": 11,
+    "哈尔滨": 12, "漠河": 12, "张家口": 12, "博鳌": 12
+}
 
 
 # 根据关键词搜索地区代码
@@ -119,6 +144,26 @@ def get_spots_in_region(url):
     return introduction, result
 
 
+def get_foods_in_region(url):
+    bs = BeautifulSoup(get_html(url), "html.parser")
+    food_list = bs.find("ol", class_="list-rank")
+    foods = food_list.find_all("a")
+    result = []
+    for food in foods:
+        result.append(food['href'])
+    return result
+
+
+def get_food_detail(food_url):
+    bs = BeautifulSoup(get_html(food_url), "html.parser")
+    rid = re.findall(r'\d+', food_url)[0]
+    fid = re.findall(r'\d+', food_url)[1]
+    fname = bs.find("div", class_="m-title clearfix").find("h1").text.replace("\n", "").replace(" ", "")
+    img = bs.find("div", class_="img-con").find("img")['src'].split('?')[0]
+    intro = bs.find("div", class_="m-txt").text.replace("\n", "")
+    return [fid, rid, fname, img, intro]
+
+
 # 获取景区详情
 def get_spot_detail(spot_id):
     spot_url = spt_base_url.format(spot_id)
@@ -133,8 +178,13 @@ def get_spot_detail(spot_id):
 
     photo_url = 'https://www.mafengwo.cn/photo/poi/{}.html'.format(spot_id)
     session = get_session_with_against(photo_url)
+    options = Options()
+    options.add_argument("--headless")
+    # options.add_argument('window-size=1920x1080')
+    # options.add_argument('--start-maximized')
+    options.add_argument('--disable-gpu')
     # -- Selenium访问，获取完整html
-    driver = webdriver.Edge()
+    driver = webdriver.Chrome(options=options)
     driver.implicitly_wait(1)
     driver.get(photo_url)
     driver.delete_all_cookies()
@@ -159,6 +209,7 @@ def get_spot_detail(spot_id):
     #     driver.execute_script(js)
     #     time.sleep(0.5)
     article = driver.execute_script("return document.documentElement.outerHTML")  # 获取完整html
+    driver.close()
     photo_bs = BeautifulSoup(article, "html.parser")
     album = photo_bs.find('div', class_="album-total").find_all("img")
     for i in range(3):
@@ -184,7 +235,6 @@ def get_spot_detail(spot_id):
     loc_data = requests.get(
         url='https://pagelet.mafengwo.cn/poi/pagelet/poiLocationApi?params={"poi_id":"' + str(spot_id) + '"}',
         headers=header, verify=False)
-    print(json.loads(loc_data.text)['data']['controller_data']['poi'])
     lat = json.loads(loc_data.text)['data']['controller_data']['poi']['lat']  # 纬度
     lng = json.loads(loc_data.text)['data']['controller_data']['poi']['lng']  # 经度
     result.append(lat)
@@ -194,10 +244,10 @@ def get_spot_detail(spot_id):
 
 # 爬虫主函数
 def crawl(keyword):
-    db = psycopg2.connect(host='127.0.0.1',
-                          port='5432',
+    db = psycopg2.connect(host='118.31.67.238',
+                          port='5433',
                           user='postgres',
-                          password='your password',
+                          password='47zyetnF&Urx',
                           database='travelapp')
 
     # 开启自动提交
@@ -207,6 +257,7 @@ def crawl(keyword):
         # 获得地区名称，代码，图片
         region_info = search_region(keyword)
         region_url = region_base_url.format(region_info[1])
+        food_url = food_base_url.format(region_info[1])
 
         # 获取地区内的景点
         info = get_spots_in_region(region_url)
@@ -218,6 +269,31 @@ def crawl(keyword):
             cursor.execute(sql_string)  # 写入地区信息
         except Exception as e:
             print(e)
+
+        # 获取地区的美食
+        try:
+            food_urls = get_foods_in_region(food_url)
+            for url in food_urls:
+                r = get_food_detail(base_url + url)
+                sql_string = 'INSERT INTO food VALUES (\'{}\',\'{}\',\'{}\',\'{}\',\'{}\')'.format(
+                    r[0], r[1], r[2], r[3], r[4]
+                )
+                print(sql_string + '\n')
+                try:
+                    cursor.execute(sql_string)  # 写入美食信息
+                except Exception as e:
+                    print(e)
+                time.sleep(0.5)
+        except Exception as e:
+            print(e)
+
+        if keyword in recommend:
+            sql_string = 'INSERT INTO recommendation VALUES (\'{}\',\'{}\')'.format(region_info[1], recommend[keyword])
+            print(sql_string)
+            try:
+                cursor.execute(sql_string)  # 写入美食信息
+            except Exception as e:
+                print(e)
 
         # 获取景点详情
         for spot in info[1]:

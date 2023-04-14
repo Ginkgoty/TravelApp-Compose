@@ -1,11 +1,3 @@
-/**
- * ExploreViewModel.kt
- *
- * This file is ViewModel of explore view
- *
- * @author Li Jiawen
- * @mail nmjbh@qq.com
- */
 package cn.edu.seu.travelapp.viewmodel
 
 import android.util.Log
@@ -13,10 +5,7 @@ import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.edu.seu.travelapp.api.*
-import cn.edu.seu.travelapp.model.Detail
-import cn.edu.seu.travelapp.model.Region
-import cn.edu.seu.travelapp.model.Spot
-import cn.edu.seu.travelapp.model.Token
+import cn.edu.seu.travelapp.model.*
 import cn.edu.seu.travelapp.ui.state.ExploreContentState
 import cn.edu.seu.travelapp.ui.state.ExploreTopBarState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +20,7 @@ data class ExploreViewState(
     val exploreContentState: ExploreContentState = ExploreContentState.REGIONS,
     val region: Region? = null,
     val spot: Spot? = null,
+    val food: Food? = null,
     val isRegionFavorite: Boolean = false,
     val isSpotFavorite: Boolean = false
 )
@@ -42,6 +32,7 @@ class ExploreViewModel : ViewModel() {
 
     fun regionClicked(region: Region, token: String) {
         getSpotList(rid = region.rid)
+        getFoodList(rid = region.rid)
         _uiState.update {
             it.copy(
                 isRegionFavorite = false
@@ -93,6 +84,16 @@ class ExploreViewModel : ViewModel() {
         }
     }
 
+    fun foodClicked(food: Food) {
+        _uiState.update {
+            it.copy(
+                exploreContentState = ExploreContentState.FOOD,
+                food = food,
+                exploreTopBarState = ExploreTopBarState.FOOD
+            )
+        }
+    }
+
     fun checkSpotFavoriteStatus(sid: Int, token: String) {
         viewModelScope.launch {
             val favoriteApi = FavoriteApi.getInstance()
@@ -112,8 +113,11 @@ class ExploreViewModel : ViewModel() {
         }
     }
 
-    fun resultRegionClicked(region: Region) {
+    fun resultRegionClicked(region: Region, token: String) {
         getSpotList(region.rid)
+        getFoodList(region.rid)
+        Log.d("rid", region.rid.toString())
+        checkRegionFavoriteStatus(rid = region.rid, token = token)
         _uiState.update {
             it.copy(
                 exploreContentState = ExploreContentState.SPOTS,
@@ -123,8 +127,9 @@ class ExploreViewModel : ViewModel() {
         }
     }
 
-    fun resultSpotClicked(spot: Spot) {
+    fun resultSpotClicked(spot: Spot, token: String) {
         getDetail(spot.sid)
+        checkSpotFavoriteStatus(sid = spot.sid, token = token)
         _uiState.update {
             it.copy(
                 exploreContentState = ExploreContentState.DETAIL,
@@ -248,6 +253,7 @@ class ExploreViewModel : ViewModel() {
     }
 
     var regionListResponse: List<Region> by mutableStateOf(listOf())
+    var recommendationListResponse: List<Region> by mutableStateOf(listOf())
     var errorMessage: String by mutableStateOf("")
     fun getRegionList() {
         viewModelScope.launch {
@@ -262,11 +268,28 @@ class ExploreViewModel : ViewModel() {
         }
     }
 
-    init {
-        getRegionList()
+    fun getRecommendList() {
+        viewModelScope.launch {
+            val mainApi = MainApi.getInstance()
+            try {
+                val regionList = mainApi.getRecommend()
+                recommendationListResponse = regionList
+            } catch (e: Exception) {
+                errorMessage = e.message.toString()
+                Log.d("Error", errorMessage)
+            }
+        }
     }
 
+
+    init {
+        getRegionList()
+        getRecommendList()
+    }
+
+
     var spotListResponse: List<Spot> by mutableStateOf(listOf())
+    var foodListResponse: List<Food> by mutableStateOf(listOf())
     private fun getSpotList(rid: Int) {
         viewModelScope.launch {
             val spotApi = SpotApi.getInstance()
@@ -276,6 +299,27 @@ class ExploreViewModel : ViewModel() {
             } catch (e: Exception) {
                 errorMessage = e.message.toString()
                 Log.d("Error", errorMessage)
+            }
+        }
+    }
+
+    val foodShowState = mutableStateOf(false)
+
+    private fun getFoodList(rid: Int) {
+        viewModelScope.launch {
+            val foodApi = FoodApi.getInstance()
+            try {
+                val foodList = foodApi.getFood(rid)
+                if (foodList != null) {
+                    foodListResponse = foodList
+                    foodShowState.value = true
+                } else {
+                    foodShowState.value = false
+                }
+            } catch (e: Exception) {
+                errorMessage = e.message.toString()
+                Log.d("Error", errorMessage)
+                foodShowState.value = false
             }
         }
     }

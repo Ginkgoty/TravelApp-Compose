@@ -42,7 +42,7 @@ class Favorregions
   public:
     struct Cols
     {
-        static const std::string _uname;
+        static const std::string _uid;
         static const std::string _rid;
     };
 
@@ -50,7 +50,7 @@ class Favorregions
     const static std::string tableName;
     const static bool hasPrimaryKey;
     const static std::vector<std::string> primaryKeyName;
-    using PrimaryKeyType = std::tuple<std::string,int32_t>;//uname,rid
+    using PrimaryKeyType = std::tuple<int32_t,int32_t>;//uid,rid
     PrimaryKeyType getPrimaryKey() const;
 
     /**
@@ -95,14 +95,13 @@ class Favorregions
                           std::string &err,
                           bool isForCreation);
 
-    /**  For column uname  */
-    ///Get the value of the column uname, returns the default value if the column is null
-    const std::string &getValueOfUname() const noexcept;
+    /**  For column uid  */
+    ///Get the value of the column uid, returns the default value if the column is null
+    const int32_t &getValueOfUid() const noexcept;
     ///Return a shared_ptr object pointing to the column const value, or an empty shared_ptr object if the column is null
-    const std::shared_ptr<std::string> &getUname() const noexcept;
-    ///Set the value of the column uname
-    void setUname(const std::string &pUname) noexcept;
-    void setUname(std::string &&pUname) noexcept;
+    const std::shared_ptr<int32_t> &getUid() const noexcept;
+    ///Set the value of the column uid
+    void setUid(const int32_t &pUid) noexcept;
 
     /**  For column rid  */
     ///Get the value of the column rid, returns the default value if the column is null
@@ -130,7 +129,7 @@ class Favorregions
     void updateArgs(drogon::orm::internal::SqlBinder &binder) const;
     ///For mysql or sqlite3
     void updateId(const uint64_t id);
-    std::shared_ptr<std::string> uname_;
+    std::shared_ptr<int32_t> uid_;
     std::shared_ptr<int32_t> rid_;
     struct MetaData
     {
@@ -147,13 +146,13 @@ class Favorregions
   public:
     static const std::string &sqlForFindingByPrimaryKey()
     {
-        static const std::string sql="select * from " + tableName + " where uname = $1 and rid = $2";
+        static const std::string sql="select * from " + tableName + " where uid = $1 and rid = $2";
         return sql;
     }
 
     static const std::string &sqlForDeletingByPrimaryKey()
     {
-        static const std::string sql="delete from " + tableName + " where uname = $1 and rid = $2";
+        static const std::string sql="delete from " + tableName + " where uid = $1 and rid = $2";
         return sql;
     }
     std::string sqlForInserting(bool &needSelection) const
@@ -163,7 +162,7 @@ class Favorregions
         needSelection = false;
         if(dirtyFlag_[0])
         {
-            sql += "uname,";
+            sql += "uid,";
             ++parametersCount;
         }
         if(dirtyFlag_[1])

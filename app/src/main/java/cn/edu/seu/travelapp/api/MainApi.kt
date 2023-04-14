@@ -1,11 +1,3 @@
-/**
- * MainApi.kt
- *
- * This file is api about main page.
- * @author Li Jiawen
- * @mail   nmjbh@qq.com
- *
- */
 package cn.edu.seu.travelapp.api
 
 import cn.edu.seu.travelapp.api.ApiConstants.BASE_URL
@@ -19,6 +11,9 @@ import retrofit2.http.Path
 interface MainApi {
     @GET("main")
     suspend fun getInfo(): List<Region>
+
+    @GET("recommend")
+    suspend fun getRecommend(): List<Region>
 
     companion object {
         var mainApi: MainApi? = null

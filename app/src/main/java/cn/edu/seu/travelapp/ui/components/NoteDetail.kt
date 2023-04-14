@@ -1,10 +1,3 @@
-/**
- * NoteDetail.kt
- *
- * This file is ui of note detail
- * @author Li Jiawen
- * @mail   nmjbh@qq.com
- */
 package cn.edu.seu.travelapp.ui.components
 
 import androidx.compose.foundation.layout.*
@@ -13,12 +6,15 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.magnifier
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.text.font.Font
@@ -68,12 +64,22 @@ fun NoteDetial(
             }
             item {
                 Row(
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = "作者：",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.SemiBold
                     )
+                    AsyncImage(
+                        model = noteDetail.upic,
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .size(30.dp)
+                    )
+                    Spacer(modifier = Modifier.size(5.dp))
                     Text(
                         text = noteDetail.uname,
                         fontSize = 16.sp,
@@ -100,9 +106,9 @@ fun NoteDetial(
                         Text(
                             text = item.content,
                             fontSize = 28.sp,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 10.dp, bottom = 10.dp)
                         )
-                        Spacer(modifier = Modifier.size(5.dp))
                     }
                     1 -> {
                         Text(

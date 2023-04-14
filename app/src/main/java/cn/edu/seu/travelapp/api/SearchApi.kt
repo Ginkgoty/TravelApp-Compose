@@ -1,11 +1,3 @@
-/**
- * SearchApi.kt
- *
- * This file is api about search function.
- * @author Li Jiawen
- * @mail   nmjbh@qq.com
- *
- */
 package cn.edu.seu.travelapp.api
 
 import cn.edu.seu.travelapp.model.Region

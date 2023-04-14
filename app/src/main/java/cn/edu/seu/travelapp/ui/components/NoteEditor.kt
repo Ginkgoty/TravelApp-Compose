@@ -1,14 +1,6 @@
-/**
- * NoteEditor.kt
- *
- * This file is ui of note editor
- * @author Li Jiawen
- * @mail   nmjbh@qq.com
- */
 package cn.edu.seu.travelapp.ui.components
 
 import android.net.Uri
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -36,18 +28,84 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import cn.edu.seu.travelapp.data.TokenStorage
-import cn.edu.seu.travelapp.ui.state.HomeViewContentState
+import cn.edu.seu.travelapp.data.DataStorage
+import cn.edu.seu.travelapp.ui.state.TravelAppState
+import cn.edu.seu.travelapp.ui.state.TravelAppViewState
 import cn.edu.seu.travelapp.viewmodel.HomeViewModel
 import coil.compose.AsyncImage
 import kotlinx.coroutines.delay
 
 @Composable
 fun NoteEditor(
-    dataStore: TokenStorage,
+    travelAppState: TravelAppState,
     homeViewModel: HomeViewModel,
+    dataStore: DataStorage,
 ) {
+    if (travelAppState.isLogin.value) {
+        homeViewModel.myNoteContentListInit()
+        NoteEditorComponent(
+            dataStore = dataStore,
+            homeViewModel = homeViewModel,
+            travelAppState = travelAppState
+        )
+    } else {
+        AlertDialog(
+            title = {
+                Text(text = "提示")
+            },
+            text = {
+                Text(text = "您还未登录，请先登录！")
+            },
+            onDismissRequest = {
+                when (travelAppState.travelAppViewState.value) {
+                    TravelAppViewState.HOME -> travelAppState.navController.navigate(route = "home")
+                    TravelAppViewState.EXPLORE -> travelAppState.navController.navigate(route = "explore")
+                    TravelAppViewState.FAVORITE -> travelAppState.navController.navigate(route = "favorite")
+                    TravelAppViewState.ME -> travelAppState.navController.navigate(route = "me")
+                    else -> {}
+                }
+                travelAppState.topBarState.value = true
+                travelAppState.bottomBarState.value = true
+            },
+            buttons = {
+                Row(
+                    modifier = Modifier.padding(all = 8.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Button(
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            when (travelAppState.travelAppViewState.value) {
+                                TravelAppViewState.HOME -> travelAppState.navController.navigate(
+                                    route = "home"
+                                )
+                                TravelAppViewState.EXPLORE -> travelAppState.navController.navigate(
+                                    route = "explore"
+                                )
+                                TravelAppViewState.FAVORITE -> travelAppState.navController.navigate(
+                                    route = "favorite"
+                                )
+                                TravelAppViewState.ME -> travelAppState.navController.navigate(route = "me")
+                                else -> {}
+                            }
+                            travelAppState.topBarState.value = true
+                            travelAppState.bottomBarState.value = true
+                        }
+                    ) {
+                        Text("好")
+                    }
+                }
+            }
+        )
+    }
+}
 
+@Composable
+fun NoteEditorComponent(
+    dataStore: DataStorage,
+    homeViewModel: HomeViewModel,
+    travelAppState: TravelAppState
+) {
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
 
@@ -64,7 +122,7 @@ fun NoteEditor(
     val closeDialogState = remember { mutableStateOf(false) }
 
     // save
-    val saveState = remember { mutableStateOf(false) }
+    val saveState = homeViewModel.noteEditorSaveState
     val saveSnackbarState = remember {
         mutableStateOf(false)
     }
@@ -79,14 +137,14 @@ fun NoteEditor(
 
     val singlePhotoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
-        onResult = { uri -> homeViewModel.editorBackground = uri?.toString() ?: "" }
+        onResult = { uri -> homeViewModel.noteEditorBackground = uri?.toString() ?: "" }
     )
 
 
     val photosPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickMultipleVisualMedia(),
         onResult = {
-            homeViewModel.dealWithImgList(imgList = it)
+            homeViewModel.dealWithNoteImgList(imgList = it)
         }
     )
 
@@ -141,7 +199,9 @@ fun NoteEditor(
             CloseAlertDialog(
                 state = closeDialogState,
                 isSave = saveState,
-                homeViewModel = homeViewModel
+                homeViewModel = homeViewModel,
+                travelAppState = travelAppState,
+                editorType = "note"
             )
         }
         Column(
@@ -197,13 +257,24 @@ fun NoteEditor(
                     }
                 }
                 LaunchedEffect(key1 = true) {
+                    progressState.value = false
                     delay(2000)
                     homeViewModel.showUploadSnackBar.value = false
-                    progressState.value = false
                     if (homeViewModel.uploadNoteStatus.value) {
+                        when (travelAppState.travelAppViewState.value) {
+                            TravelAppViewState.HOME -> travelAppState.navController.navigate(route = "home")
+                            TravelAppViewState.EXPLORE -> travelAppState.navController.navigate(
+                                route = "explore"
+                            )
+                            TravelAppViewState.FAVORITE -> travelAppState.navController.navigate(
+                                route = "favorite"
+                            )
+                            TravelAppViewState.ME -> travelAppState.navController.navigate(route = "me")
+                            else -> {}
+                        }
+                        travelAppState.topBarState.value = true
+                        travelAppState.bottomBarState.value = true
                         homeViewModel.getNoteList()
-                        homeViewModel.updateContentState(HomeViewContentState.NOTE_LIST)
-                        homeViewModel.clearNoteEditor()
                     }
                 }
             }
@@ -260,7 +331,7 @@ fun NoteEditor(
                     Spacer(modifier = Modifier.size(10.dp))
                     Button(
                         onClick = {
-                            if (homeViewModel.checkBeforeUpload()) {
+                            if (homeViewModel.checkNoteBeforeUpload()) {
                                 homeViewModel.uploadNote(token = token, context = context)
                                 progressState.value = true
                             } else {
@@ -287,7 +358,7 @@ fun NoteEditor(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    if (homeViewModel.editorBackground == "") {
+                    if (homeViewModel.noteEditorBackground == "") {
                         Icon(
                             imageVector = Icons.Filled.Image,
                             contentDescription = "BG",
@@ -303,7 +374,7 @@ fun NoteEditor(
                         )
                     } else {
                         AsyncImage(
-                            model = Uri.parse(homeViewModel.editorBackground),
+                            model = Uri.parse(homeViewModel.noteEditorBackground),
                             contentDescription = "BG PHOTO",
                             modifier = Modifier.fillMaxWidth(),
                             contentScale = ContentScale.Crop
@@ -316,9 +387,9 @@ fun NoteEditor(
                     .fillMaxSize(1f)
             ) {
                 TextField(
-                    value = homeViewModel.editorTitle,
+                    value = homeViewModel.noteEditorTitle,
                     onValueChange = {
-                        homeViewModel.editorTitle = it
+                        homeViewModel.noteEditorTitle = it
                     },
                     placeholder = {
                         Text(
@@ -342,9 +413,9 @@ fun NoteEditor(
                 )
                 Divider()
                 TextField(
-                    value = homeViewModel.editorRname,
+                    value = homeViewModel.noteEditorRname,
                     onValueChange = {
-                        homeViewModel.editorRname = it
+                        homeViewModel.noteEditorRname = it
                     },
                     placeholder = {
                         Text(
@@ -368,7 +439,7 @@ fun NoteEditor(
                 Divider()
                 Spacer(modifier = Modifier.size(5.dp))
                 Column() {
-                    homeViewModel.editorNoteContentList.forEachIndexed { index, item ->
+                    homeViewModel.noteEditorNoteContentList.forEachIndexed { index, item ->
                         when (item.first.value) {
                             0 -> {
                                 Row(
@@ -464,68 +535,6 @@ fun NoteEditor(
             }
         }
     }
-}
-
-@Composable
-fun CloseAlertDialog(
-    state: MutableState<Boolean>,
-    isSave: MutableState<Boolean>,
-    homeViewModel: HomeViewModel
-) {
-    AlertDialog(
-        onDismissRequest = {
-
-        },
-        title = {
-            Text(
-                text = "退出游记编辑"
-            )
-        },
-        text = {
-            Text(
-                text = "您将退出游记编辑页面，如需要保存请返回并点击\"保存\"。"
-            )
-        },
-        buttons = {
-            Row(
-                modifier = Modifier.padding(10.dp)
-            ) {
-                Spacer(modifier = Modifier.weight(1f))
-                OutlinedButton(
-                    onClick = {
-                        state.value = false
-                        homeViewModel.updateContentState(HomeViewContentState.NOTE_LIST)
-                        if (!isSave.value) {
-                            homeViewModel.clearNoteEditor()
-                        }
-                    },
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "close",
-                    )
-                    Text(
-                        text = "退出编辑"
-                    )
-                }
-                Spacer(modifier = Modifier.size(10.dp))
-                Button(
-                    onClick = {
-                        state.value = false
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Reply,
-                        contentDescription = "check",
-                    )
-                    Text(
-                        text = "继续编辑"
-                    )
-                }
-            }
-        },
-        modifier = Modifier.padding(10.dp)
-    )
 }
 
 @Composable

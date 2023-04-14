@@ -1,11 +1,3 @@
-/**
- * FavoriteApi.kt
- *
- * This file is api about favorite function.
- * @author Li Jiawen
- * @mail   nmjbh@qq.com
- *
- */
 package cn.edu.seu.travelapp.api
 
 import cn.edu.seu.travelapp.model.Token

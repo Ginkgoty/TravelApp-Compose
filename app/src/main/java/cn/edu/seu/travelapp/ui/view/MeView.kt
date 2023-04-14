@@ -1,14 +1,12 @@
-/**
- * MeView.kt
- *
- * This file contains the entire ui of the me view
- *
- * @author Li Jiawen
- * @mail nmjbh@qq.com
- */
 package cn.edu.seu.travelapp.ui.view
 
+
+import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -19,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Badge
 import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -28,6 +27,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
@@ -36,32 +36,45 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cn.edu.seu.travelapp.R
-import cn.edu.seu.travelapp.data.TokenStorage
+import cn.edu.seu.travelapp.data.DataStorage
 import cn.edu.seu.travelapp.ui.state.MeContentState
 import cn.edu.seu.travelapp.ui.state.TravelAppState
 import cn.edu.seu.travelapp.viewmodel.MeViewModel
+import coil.compose.AsyncImage
 import kotlinx.coroutines.delay
+
 
 @Composable
 fun MeView(
     meViewModel: MeViewModel,
-    dataStore: TokenStorage,
+    dataStore: DataStorage,
     travelAppState: TravelAppState,
     paddingValues: PaddingValues
 ) {
     BackHandler(enabled = true) {
 
     }
-    val meViewState = meViewModel.uiState.collectAsState()
-    when (meViewState.value.meContentState) {
+    val meViewState = meViewModel.uiState.collectAsState().value
+    val token = dataStore.getAccessToken.collectAsState(initial = "").value
+    LaunchedEffect(key1 = token) {
+        Log.d("Launched", "token")
+        if (token == "") {
+            meViewModel.updateContentState(MeContentState.INIT)
+        } else {
+            meViewModel.updateContentState(MeContentState.ME)
+        }
+    }
+    when (meViewState.meContentState) {
         MeContentState.INIT -> {
             BackHandler(enabled = true) {
 
             }
+            Log.d("Me content", "init")
             InitView(paddingValues = paddingValues, meViewModel = meViewModel)
         }
         MeContentState.SIGN_UP -> {
@@ -80,6 +93,7 @@ fun MeView(
             BackHandler(enabled = true) {
 
             }
+            meViewModel.updateContentState(MeContentState.ME)
             AfterLoginView(
                 meViewModel = meViewModel,
                 dataStore = dataStore,
@@ -98,6 +112,13 @@ fun MeView(
             }
             ChangeUnameView(meViewModel = meViewModel, dataStore = dataStore)
         }
+        MeContentState.CHANGE_UPIC -> {
+            BackHandler(enabled = true) {
+                meViewModel.updateContentState(MeContentState.ME)
+            }
+            ChangeUpicView(meViewModel = meViewModel, dataStore = dataStore)
+        }
+
     }
 }
 
@@ -106,7 +127,7 @@ fun MeView(
 @Composable
 fun ChangePwdView(
     meViewModel: MeViewModel,
-    dataStore: TokenStorage
+    dataStore: DataStorage
 ) {
     val meViewState = meViewModel.uiState.collectAsState()
     val token = dataStore.getAccessToken.collectAsState(initial = "").value
@@ -171,9 +192,6 @@ fun ChangePwdView(
         LaunchedEffect(key1 = meViewModel.snackBarShowingState) {
             delay(2000)
             meViewModel.snackBarShowingState = false
-            if (meViewState.value.changePwdStatus == 1) {
-                meViewModel.updateContentState(MeContentState.ME)
-            }
         }
         Text(
             text = "修改密码",
@@ -282,8 +300,8 @@ fun ChangePwdView(
                 if (!repwdIsError && !pwdIsError) {
                     meViewModel.changePwd(pwd = password, token = token)
                 } else {
-                    meViewModel.snackBarShowingState = true
                     meViewModel.updateChangePwdStatus(newValue = 3)
+                    meViewModel.snackBarShowingState = true
                 }
             },
             colors = ButtonDefaults.buttonColors(
@@ -307,11 +325,147 @@ fun ChangePwdView(
 
 }
 
+@Composable
+fun ChangeUpicView(
+    meViewModel: MeViewModel,
+    dataStore: DataStorage
+) {
+    val context = LocalContext.current
+    val token = dataStore.getAccessToken.collectAsState(initial = "").value
+
+    val singlePhotoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+        onResult = { uri -> meViewModel.upicUri = uri?.toString() ?: "" }
+    )
+
+    val checkBarState = remember { mutableStateOf(false) }
+    val uploadBarState = remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        if (meViewModel.upicUri == "") {
+            Box(
+                modifier = Modifier
+                    .size(250.dp)
+                    .clip(CircleShape)
+                    .clickable {
+                        singlePhotoPickerLauncher.launch(
+                            PickVisualMediaRequest(mediaType = ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    }
+                    .background(Color(0xfff6f6f6)),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Image,
+                        contentDescription = null,
+                        tint = Color.Gray
+                    )
+                    Spacer(modifier = Modifier.size(10.dp))
+                    Text(
+                        text = "点击上传图片",
+                        color = Color.Gray
+                    )
+                }
+            }
+        } else {
+            AsyncImage(
+                model = Uri.parse(meViewModel.upicUri),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .size(250.dp)
+                    .clickable {
+                        singlePhotoPickerLauncher.launch(
+                            PickVisualMediaRequest(mediaType = ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    }
+            )
+        }
+        Spacer(modifier = Modifier.size(20.dp))
+        Button(
+            onClick = {
+                if (meViewModel.upicUri == "") {
+                    checkBarState.value = true
+                } else {
+                    meViewModel.changeUpic(
+                        context = context,
+                        token = token
+                    )
+                }
+            },
+            colors = ButtonDefaults.buttonColors(
+                contentColor = Color.White,
+                containerColor = MaterialTheme.colors.primary
+            )
+        ) {
+            Text(text = "上传头像")
+        }
+    }
+    if (checkBarState.value) {
+        Snackbar(
+            containerColor = Color.White,
+            contentColor = MaterialTheme.colors.primary,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = "您未选择图片！",
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+    LaunchedEffect(key1 = checkBarState.value) {
+        if (checkBarState.value) {
+            delay(2000)
+            checkBarState.value = false
+        }
+    }
+    if (uploadBarState.value) {
+        if (!meViewModel.uploadStatus.value) {
+            Snackbar(
+                containerColor = Color.White,
+                contentColor = MaterialTheme.colors.primary,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "上传失败，请重试",
+                    textAlign = TextAlign.Center
+                )
+            }
+        } else {
+            Snackbar(
+                containerColor = Color.White,
+                contentColor = MaterialTheme.colors.primary,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "上传成功",
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+    LaunchedEffect(key1 = uploadBarState.value) {
+        if (uploadBarState.value) {
+            delay(2000)
+            uploadBarState.value = false
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChangeUnameView(
     meViewModel: MeViewModel,
-    dataStore: TokenStorage
+    dataStore: DataStorage
 ) {
     val meViewState = meViewModel.uiState.collectAsState()
 
@@ -368,9 +522,9 @@ fun ChangeUnameView(
         LaunchedEffect(key1 = meViewModel.snackBarShowingState) {
             delay(2000)
             meViewModel.snackBarShowingState = false
-            if (meViewState.value.changeUnameStatus == 1) {
-                meViewModel.updateContentState(MeContentState.ME)
-            }
+//            if (meViewState.value.changeUnameStatus == 1) {
+//                meViewModel.updateContentState(MeContentState.ME)
+//            }
         }
         Text(
             text = "修改用户名",
@@ -448,11 +602,10 @@ fun ChangeUnameView(
 
 @Composable
 fun AfterLoginView(
-    dataStore: TokenStorage,
+    dataStore: DataStorage,
     travelAppState: TravelAppState,
     meViewModel: MeViewModel
 ) {
-    val meViewState = meViewModel.uiState.collectAsState()
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -472,17 +625,13 @@ fun AfterLoginView(
                     .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.profile),
+                AsyncImage(
+                    model = dataStore.getCurrentUpic.collectAsState(initial = "").value,
                     contentDescription = "user icon",
                     contentScale = ContentScale.Crop,
                     modifier = Modifier
                         .size(80.dp)
                         .clip(CircleShape)
-//                        .border(
-//                            BorderStroke(3.dp, Color.Gray),
-//                            CircleShape
-//                        )
                 )
                 Spacer(modifier = Modifier.size(30.dp))
                 Text(
@@ -543,11 +692,38 @@ fun AfterLoginView(
                 )
             }
         }
+        Spacer(modifier = Modifier.size(5.dp))
+
+        // 修改头像
+        Surface(
+            shadowElevation = 4.dp,
+            modifier = Modifier.clickable {
+                meViewModel.updateContentState(MeContentState.CHANGE_UPIC)
+            }
+        ) {
+            Row(
+                modifier = Modifier
+                    .padding(15.dp)
+                    .fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Person,
+                    contentDescription = "Icon",
+                    modifier = Modifier.size(40.dp)
+                )
+                Spacer(modifier = Modifier.size(30.dp))
+                Text(
+                    text = "修改头像",
+                    fontSize = 22.sp
+                )
+            }
+        }
         Spacer(modifier = Modifier.size(150.dp))
         Button(
             modifier = Modifier.size(width = 160.dp, height = 60.dp),
             onClick = {
-                meViewModel.logOut();
+                meViewModel.logOut()
                 travelAppState.isLogin.value = false
             },
             colors = ButtonDefaults.buttonColors(
@@ -1087,7 +1263,7 @@ fun MeAppBar(
         MeContentState.ME -> {
             InitAppBar()
         }
-        MeContentState.CHANGE_UNAME, MeContentState.CHANGE_PWD -> {
+        MeContentState.CHANGE_UNAME, MeContentState.CHANGE_PWD, MeContentState.CHANGE_UPIC -> {
             OpAppBar(meViewModel = meViewModel)
         }
     }

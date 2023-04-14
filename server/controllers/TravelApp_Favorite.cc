@@ -1,13 +1,3 @@
-/**
- * @file TravelApp_Favorite.cc
- * @author Li Jiawen (nmjbh@qq.com)
- * @brief 
- * @version 1.0
- * @date 2023-04-01
- * 
- * @copyright Copyright (c) 2023
- * 
- */
 #include "TravelApp_Favorite.h"
 #include "Favorspots.h"
 #include "Favorregions.h"
@@ -35,10 +25,10 @@ void Favorite::favoriteSpot(const HttpRequestPtr &req,
     std::string jwt = (*json)["token"].asString();
     Signer signer(SIGN_KEY);
     Token token = signer.verify(jwt);
-    std::string uname = token.payload().get("uname");
+    int uid = token.payload().get("uid");
 
     auto f = drogon_model::travelapp::Favorspots();
-    f.setUname(uname);
+    f.setUid(uid);
     f.setSid(sid);
 
     Json::Value ret;
@@ -68,10 +58,10 @@ void Favorite::favoriteRegion(const HttpRequestPtr &req,
     std::string jwt = (*json)["token"].asString();
     Signer signer(SIGN_KEY);
     Token token = signer.verify(jwt);
-    std::string uname = token.payload().get("uname");
+    int uid = token.payload().get("uid");
 
     auto f = drogon_model::travelapp::Favorregions();
-    f.setUname(uname);
+    f.setUid(uid);
     f.setRid(rid);
 
     Json::Value ret;
@@ -101,12 +91,12 @@ void Favorite::unfavoriteSpot(const HttpRequestPtr &req,
     std::string jwt = (*json)["token"].asString();
     Signer signer(SIGN_KEY);
     Token token = signer.verify(jwt);
-    std::string uname = token.payload().get("uname");
+    int uid = token.payload().get("uid");
 
     Json::Value ret;
     try {
         if (favoriteMapper
-                .deleteByPrimaryKey(drogon_model::travelapp::Favorspots::PrimaryKeyType{uname, sid})) {
+                .deleteByPrimaryKey(drogon_model::travelapp::Favorspots::PrimaryKeyType{uid, sid})) {
             ret["result"] = true;
             auto resp = HttpResponse::newHttpJsonResponse(ret);
             callback(resp);
@@ -137,12 +127,12 @@ void Favorite::unfavoriteRegion(const HttpRequestPtr &req,
     std::string jwt = (*json)["token"].asString();
     Signer signer(SIGN_KEY);
     Token token = signer.verify(jwt);
-    std::string uname = token.payload().get("uname");
+    int uid = token.payload().get("uid");
 
     Json::Value ret;
     try {
         if (favoriteMapper
-                .deleteByPrimaryKey(drogon_model::travelapp::Favorregions::PrimaryKeyType{uname, rid})) {
+                .deleteByPrimaryKey(drogon_model::travelapp::Favorregions::PrimaryKeyType{uid, rid})) {
             ret["result"] = true;
             auto resp = HttpResponse::newHttpJsonResponse(ret);
             callback(resp);
@@ -173,12 +163,12 @@ void Favorite::getFavoriteSpots(const HttpRequestPtr &req, std::function<void(co
     std::string jwt = (*json)["token"].asString();
     Signer signer(SIGN_KEY);
     Token token = signer.verify(jwt);
-    std::string uname = token.payload().get("uname");
+    int uid = token.payload().get("uid");
 
     Json::Value ret;
     try {
         auto result = favoriteMapper
-                .findBy(Criteria("uname", CompareOperator::EQ, uname));
+                .findBy(Criteria("uid", CompareOperator::EQ, uid));
         for (const auto &r: result) {
             auto spot = spotMapper.findByPrimaryKey(drogon_model::travelapp::Spot::PrimaryKeyType{r.getValueOfSid()});
             ret.append(spot.toJson());
@@ -202,12 +192,12 @@ void Favorite::getFavoriteRegions(const HttpRequestPtr &req, std::function<void(
     std::string jwt = (*json)["token"].asString();
     Signer signer(SIGN_KEY);
     Token token = signer.verify(jwt);
-    std::string uname = token.payload().get("uname");
+    int uid = token.payload().get("uid");
 
     Json::Value ret;
     try {
         auto result = favoriteMapper
-                .findBy(Criteria("uname", CompareOperator::EQ, uname));
+                .findBy(Criteria("uid", CompareOperator::EQ, uid));
         for (const auto &r: result) {
             auto region = regionMapper
                     .findByPrimaryKey(drogon_model::travelapp::Spot::PrimaryKeyType{r.getValueOfRid()});
@@ -234,12 +224,12 @@ Favorite::checkRegionFavoriteStatus(const HttpRequestPtr &req,
     std::string jwt = (*json)["token"].asString();
     Signer signer(SIGN_KEY);
     Token token = signer.verify(jwt);
-    std::string uname = token.payload().get("uname");
+    int uid = token.payload().get("uid");
 
     Json::Value ret;
     try {
         auto result = favoriteMapper.findByPrimaryKey(
-                drogon_model::travelapp::Favorregions::PrimaryKeyType{uname, rid});
+                drogon_model::travelapp::Favorregions::PrimaryKeyType{uid, rid});
         ret["result"] = true;
         auto resp = HttpResponse::newHttpJsonResponse(ret);
         callback(resp);
@@ -262,12 +252,12 @@ Favorite::checkSpotFavoriteStatus(const HttpRequestPtr &req,
     std::string jwt = (*json)["token"].asString();
     Signer signer(SIGN_KEY);
     Token token = signer.verify(jwt);
-    std::string uname = token.payload().get("uname");
+    int uid = token.payload().get("uid");
 
     Json::Value ret;
     try {
         auto result = favoriteMapper.findByPrimaryKey(
-                drogon_model::travelapp::Favorspots::PrimaryKeyType{uname, sid});
+                drogon_model::travelapp::Favorspots::PrimaryKeyType{uid, sid});
         ret["result"] = true;
         auto resp = HttpResponse::newHttpJsonResponse(ret);
         callback(resp);

@@ -1,10 +1,3 @@
-/**
- * RegionCard.kt
- *
- * This file is ui of region item in main view and search view
- * @author Li Jiawen
- * @mail   nmjbh@qq.com
- */
 package cn.edu.seu.travelapp.ui.components
 
 import androidx.compose.foundation.clickable

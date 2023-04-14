@@ -1,10 +1,3 @@
-/**
- * NoteList.kt
- *
- * This file is ui of note list when you in home view
- * @author Li Jiawen
- * @mail   nmjbh@qq.com
- */
 package cn.edu.seu.travelapp.ui.components
 
 import androidx.compose.foundation.clickable
@@ -23,6 +16,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.Font
@@ -40,7 +34,8 @@ import kotlinx.coroutines.launch
 fun NoteList(
     noteList: List<Note>,
     homeViewModel: HomeViewModel,
-    paddingValues: PaddingValues
+    paddingValues: PaddingValues,
+    token: String
 ) {
     val scope = rememberCoroutineScope()
     val homeViewState = homeViewModel.uiState.collectAsState()
@@ -53,13 +48,32 @@ fun NoteList(
             modifier = Modifier.padding(bottom = paddingValues.calculateBottomPadding())
         ) {
             item {
-                Text(
-                    text = "热门游记",
-                    fontFamily = FontFamily(Font(R.font.hggys)),
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(start = 5.dp)
-                )
+                Row(
+                    modifier = Modifier
+                        .padding(5.dp)
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "热门图文",
+                        fontFamily = FontFamily(Font(R.font.hggys)),
+                        fontSize = 28.sp,
+                        modifier = Modifier
+                            .padding(start = 5.dp)
+                            .alpha(0.5f)
+                            .clickable {
+                                homeViewModel.getPictxtList(token = token)
+                                homeViewModel.updateContentState(HomeViewContentState.PICTXT_LIST)
+                            }
+                    )
+                    Spacer(modifier = Modifier.size(10.dp))
+                    Text(
+                        text = "热门游记",
+                        fontFamily = FontFamily(Font(R.font.hggys)),
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
             }
             items(noteList) { item ->
                 NoteOutline(note = item, onNoteOutlineClicked = {

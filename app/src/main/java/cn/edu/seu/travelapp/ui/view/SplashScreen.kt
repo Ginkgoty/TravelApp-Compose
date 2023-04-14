@@ -1,11 +1,3 @@
-/**
- * SplashScreen.kt
- *
- * This file contains the ui of the Splash screen
- *
- * @author Li Jiawen
- * @mail nmjbh@qq.com
- */
 package cn.edu.seu.travelapp.ui.view
 
 import android.view.animation.OvershootInterpolator
@@ -58,6 +50,7 @@ fun SplashScreen(
         delay(1000)
         navController.navigate("home")
         travelAppState.updateTravelAppViewState(TravelAppViewState.HOME)
+        travelAppState.bottomBarState.value = true
     }
     Box(
         contentAlignment = Alignment.Center,

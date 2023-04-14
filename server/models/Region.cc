@@ -17,6 +17,7 @@ const std::string Region::Cols::_rid = "rid";
 const std::string Region::Cols::_rname = "rname";
 const std::string Region::Cols::_intro = "intro";
 const std::string Region::Cols::_pic = "pic";
+const std::string Region::Cols::_view = "view";
 const std::string Region::primaryKeyName = "rid";
 const bool Region::hasPrimaryKey = true;
 const std::string Region::tableName = "region";
@@ -25,7 +26,8 @@ const std::vector<typename Region::MetaData> Region::metaData_={
 {"rid","int32_t","integer",4,0,1,1},
 {"rname","std::string","character varying",255,0,0,1},
 {"intro","std::string","text",0,0,0,1},
-{"pic","std::string","character varying",255,0,0,1}
+{"pic","std::string","character varying",255,0,0,1},
+{"view","int32_t","integer",4,0,0,1}
 };
 const std::string &Region::getColumnName(size_t index) noexcept(false)
 {
@@ -52,11 +54,15 @@ Region::Region(const Row &r, const ssize_t indexOffset) noexcept
         {
             pic_=std::make_shared<std::string>(r["pic"].as<std::string>());
         }
+        if(!r["view"].isNull())
+        {
+            view_=std::make_shared<int32_t>(r["view"].as<int32_t>());
+        }
     }
     else
     {
         size_t offset = (size_t)indexOffset;
-        if(offset + 4 > r.size())
+        if(offset + 5 > r.size())
         {
             LOG_FATAL << "Invalid SQL result for this model";
             return;
@@ -82,13 +88,18 @@ Region::Region(const Row &r, const ssize_t indexOffset) noexcept
         {
             pic_=std::make_shared<std::string>(r[index].as<std::string>());
         }
+        index = offset + 4;
+        if(!r[index].isNull())
+        {
+            view_=std::make_shared<int32_t>(r[index].as<int32_t>());
+        }
     }
 
 }
 
 Region::Region(const Json::Value &pJson, const std::vector<std::string> &pMasqueradingVector) noexcept(false)
 {
-    if(pMasqueradingVector.size() != 4)
+    if(pMasqueradingVector.size() != 5)
     {
         LOG_ERROR << "Bad masquerading vector";
         return;
@@ -123,6 +134,14 @@ Region::Region(const Json::Value &pJson, const std::vector<std::string> &pMasque
         if(!pJson[pMasqueradingVector[3]].isNull())
         {
             pic_=std::make_shared<std::string>(pJson[pMasqueradingVector[3]].asString());
+        }
+    }
+    if(!pMasqueradingVector[4].empty() && pJson.isMember(pMasqueradingVector[4]))
+    {
+        dirtyFlag_[4] = true;
+        if(!pJson[pMasqueradingVector[4]].isNull())
+        {
+            view_=std::make_shared<int32_t>((int32_t)pJson[pMasqueradingVector[4]].asInt64());
         }
     }
 }
@@ -161,12 +180,20 @@ Region::Region(const Json::Value &pJson) noexcept(false)
             pic_=std::make_shared<std::string>(pJson["pic"].asString());
         }
     }
+    if(pJson.isMember("view"))
+    {
+        dirtyFlag_[4]=true;
+        if(!pJson["view"].isNull())
+        {
+            view_=std::make_shared<int32_t>((int32_t)pJson["view"].asInt64());
+        }
+    }
 }
 
 void Region::updateByMasqueradedJson(const Json::Value &pJson,
                                             const std::vector<std::string> &pMasqueradingVector) noexcept(false)
 {
-    if(pMasqueradingVector.size() != 4)
+    if(pMasqueradingVector.size() != 5)
     {
         LOG_ERROR << "Bad masquerading vector";
         return;
@@ -202,6 +229,14 @@ void Region::updateByMasqueradedJson(const Json::Value &pJson,
             pic_=std::make_shared<std::string>(pJson[pMasqueradingVector[3]].asString());
         }
     }
+    if(!pMasqueradingVector[4].empty() && pJson.isMember(pMasqueradingVector[4]))
+    {
+        dirtyFlag_[4] = true;
+        if(!pJson[pMasqueradingVector[4]].isNull())
+        {
+            view_=std::make_shared<int32_t>((int32_t)pJson[pMasqueradingVector[4]].asInt64());
+        }
+    }
 }
 
 void Region::updateByJson(const Json::Value &pJson) noexcept(false)
@@ -235,6 +270,14 @@ void Region::updateByJson(const Json::Value &pJson) noexcept(false)
         if(!pJson["pic"].isNull())
         {
             pic_=std::make_shared<std::string>(pJson["pic"].asString());
+        }
+    }
+    if(pJson.isMember("view"))
+    {
+        dirtyFlag_[4] = true;
+        if(!pJson["view"].isNull())
+        {
+            view_=std::make_shared<int32_t>((int32_t)pJson["view"].asInt64());
         }
     }
 }
@@ -327,6 +370,23 @@ void Region::setPic(std::string &&pPic) noexcept
     dirtyFlag_[3] = true;
 }
 
+const int32_t &Region::getValueOfView() const noexcept
+{
+    const static int32_t defaultValue = int32_t();
+    if(view_)
+        return *view_;
+    return defaultValue;
+}
+const std::shared_ptr<int32_t> &Region::getView() const noexcept
+{
+    return view_;
+}
+void Region::setView(const int32_t &pView) noexcept
+{
+    view_ = std::make_shared<int32_t>(pView);
+    dirtyFlag_[4] = true;
+}
+
 void Region::updateId(const uint64_t id)
 {
 }
@@ -337,7 +397,8 @@ const std::vector<std::string> &Region::insertColumns() noexcept
         "rid",
         "rname",
         "intro",
-        "pic"
+        "pic",
+        "view"
     };
     return inCols;
 }
@@ -388,6 +449,17 @@ void Region::outputArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
+    if(dirtyFlag_[4])
+    {
+        if(getView())
+        {
+            binder << getValueOfView();
+        }
+        else
+        {
+            binder << nullptr;
+        }
+    }
 }
 
 const std::vector<std::string> Region::updateColumns() const
@@ -408,6 +480,10 @@ const std::vector<std::string> Region::updateColumns() const
     if(dirtyFlag_[3])
     {
         ret.push_back(getColumnName(3));
+    }
+    if(dirtyFlag_[4])
+    {
+        ret.push_back(getColumnName(4));
     }
     return ret;
 }
@@ -458,6 +534,17 @@ void Region::updateArgs(drogon::orm::internal::SqlBinder &binder) const
             binder << nullptr;
         }
     }
+    if(dirtyFlag_[4])
+    {
+        if(getView())
+        {
+            binder << getValueOfView();
+        }
+        else
+        {
+            binder << nullptr;
+        }
+    }
 }
 Json::Value Region::toJson() const
 {
@@ -494,6 +581,14 @@ Json::Value Region::toJson() const
     {
         ret["pic"]=Json::Value();
     }
+    if(getView())
+    {
+        ret["view"]=getValueOfView();
+    }
+    else
+    {
+        ret["view"]=Json::Value();
+    }
     return ret;
 }
 
@@ -501,7 +596,7 @@ Json::Value Region::toMasqueradedJson(
     const std::vector<std::string> &pMasqueradingVector) const
 {
     Json::Value ret;
-    if(pMasqueradingVector.size() == 4)
+    if(pMasqueradingVector.size() == 5)
     {
         if(!pMasqueradingVector[0].empty())
         {
@@ -547,6 +642,17 @@ Json::Value Region::toMasqueradedJson(
                 ret[pMasqueradingVector[3]]=Json::Value();
             }
         }
+        if(!pMasqueradingVector[4].empty())
+        {
+            if(getView())
+            {
+                ret[pMasqueradingVector[4]]=getValueOfView();
+            }
+            else
+            {
+                ret[pMasqueradingVector[4]]=Json::Value();
+            }
+        }
         return ret;
     }
     LOG_ERROR << "Masquerade failed";
@@ -581,6 +687,14 @@ Json::Value Region::toMasqueradedJson(
     else
     {
         ret["pic"]=Json::Value();
+    }
+    if(getView())
+    {
+        ret["view"]=getValueOfView();
+    }
+    else
+    {
+        ret["view"]=Json::Value();
     }
     return ret;
 }
@@ -627,13 +741,23 @@ bool Region::validateJsonForCreation(const Json::Value &pJson, std::string &err)
         err="The pic column cannot be null";
         return false;
     }
+    if(pJson.isMember("view"))
+    {
+        if(!validJsonOfField(4, "view", pJson["view"], err, true))
+            return false;
+    }
+    else
+    {
+        err="The view column cannot be null";
+        return false;
+    }
     return true;
 }
 bool Region::validateMasqueradedJsonForCreation(const Json::Value &pJson,
                                                 const std::vector<std::string> &pMasqueradingVector,
                                                 std::string &err)
 {
-    if(pMasqueradingVector.size() != 4)
+    if(pMasqueradingVector.size() != 5)
     {
         err = "Bad masquerading vector";
         return false;
@@ -691,6 +815,19 @@ bool Region::validateMasqueradedJsonForCreation(const Json::Value &pJson,
             return false;
         }
       }
+      if(!pMasqueradingVector[4].empty())
+      {
+          if(pJson.isMember(pMasqueradingVector[4]))
+          {
+              if(!validJsonOfField(4, pMasqueradingVector[4], pJson[pMasqueradingVector[4]], err, true))
+                  return false;
+          }
+        else
+        {
+            err="The " + pMasqueradingVector[4] + " column cannot be null";
+            return false;
+        }
+      }
     }
     catch(const Json::LogicError &e)
     {
@@ -726,13 +863,18 @@ bool Region::validateJsonForUpdate(const Json::Value &pJson, std::string &err)
         if(!validJsonOfField(3, "pic", pJson["pic"], err, false))
             return false;
     }
+    if(pJson.isMember("view"))
+    {
+        if(!validJsonOfField(4, "view", pJson["view"], err, false))
+            return false;
+    }
     return true;
 }
 bool Region::validateMasqueradedJsonForUpdate(const Json::Value &pJson,
                                               const std::vector<std::string> &pMasqueradingVector,
                                               std::string &err)
 {
-    if(pMasqueradingVector.size() != 4)
+    if(pMasqueradingVector.size() != 5)
     {
         err = "Bad masquerading vector";
         return false;
@@ -761,6 +903,11 @@ bool Region::validateMasqueradedJsonForUpdate(const Json::Value &pJson,
       if(!pMasqueradingVector[3].empty() && pJson.isMember(pMasqueradingVector[3]))
       {
           if(!validJsonOfField(3, pMasqueradingVector[3], pJson[pMasqueradingVector[3]], err, false))
+              return false;
+      }
+      if(!pMasqueradingVector[4].empty() && pJson.isMember(pMasqueradingVector[4]))
+      {
+          if(!validJsonOfField(4, pMasqueradingVector[4], pJson[pMasqueradingVector[4]], err, false))
               return false;
       }
     }
@@ -844,6 +991,18 @@ bool Region::validJsonOfField(size_t index,
                 return false;
             }
 
+            break;
+        case 4:
+            if(pJson.isNull())
+            {
+                err="The " + fieldName + " column cannot be null";
+                return false;
+            }
+            if(!pJson.isInt())
+            {
+                err="Type error in the "+fieldName+" field";
+                return false;
+            }
             break;
         default:
             err="Internal error in the server";

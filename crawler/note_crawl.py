@@ -70,10 +70,10 @@ def against_anti_crawl(url):
 def get_note_list():
     note_list = []
     session = against_anti_crawl(BASE_URL)
-    db = psycopg2.connect(host='127.0.0.1',
-                          port='5432',
+    db = psycopg2.connect(host='118.31.67.238',
+                          port='5433',
                           user='postgres',
-                          password='localhost',
+                          password='47zyetnF&Urx',
                           database='travelapp')
 
     # 开启自动提交
@@ -136,7 +136,8 @@ def crawl_index_html(session, url, page):
     driver.get(url)
     time.sleep(2)
     #  click page button
-    driver.find_element(By.XPATH, f'//*[@id="_j_tn_pagination"]/a[{page}]').click()
+    if page > 1:
+        driver.find_element(By.XPATH, f'//*[@id="_j_tn_pagination"]/a[{page - 1}]').click()
     time.sleep(2)
     js = "window.scrollTo(0, document.body.scrollHeight)"
     for j in range(5):
@@ -191,6 +192,9 @@ def crawl_note_html(session, url):
 
 #  分析游记信息
 def analyse_note(url):
+    if not hasattr(analyse_note, 'uid'):
+        analyse_note.uid = 0
+    analyse_note.uid += 1
     # 获取游记的html
     session = against_anti_crawl(url=url)
     html = crawl_note_html(session=session, url=url)
@@ -202,6 +206,8 @@ def analyse_note(url):
         background = bs.find("div", class_='set_bg _j_load_cover').find("img")['src']
         # 用户名
         uname = bs.find("a", class_="per_name")['title']
+        # 用户图片
+        upic = bs.find("div", class_='person').find("img")['src']
         # 时间
         t = bs.find("span", class_="time").text
         # 标题
@@ -236,17 +242,17 @@ def analyse_note(url):
                     url = img['data-rt-src']
                     content.append(Item(kind=2, content=url).__dict__)
         content_json = json.dumps(content, ensure_ascii=False)
-        return nid, background, uname, t, title, content_json
+        return nid, background, analyse_note.uid, uname, upic, t, title, content_json
     except Exception as e:
         print(e)
 
 
 def crawl():
     note_list = get_note_list()
-    db = psycopg2.connect(host='127.0.0.1',
-                          port='5432',
+    db = psycopg2.connect(host='118.31.67.238',
+                          port='5433',
                           user='postgres',
-                          password='your password',
+                          password='47zyetnF&Urx',
                           database='travelapp')
 
     # 开启自动提交
@@ -256,8 +262,12 @@ def crawl():
     for note_url in note_list:
         try:
             result = analyse_note(note_url)
+            sql_string = 'INSERT INTO traveler VALUES (\'{}\',\'{}\',\'{}\',\'{}\')'.format(
+                result[2], result[3], result[4], '7c222fb2927d828af22f592134e8932480637c0d'
+            )
+            cursor.execute(sql_string)
             sql_string = 'INSERT INTO note_detail VALUES (\'{}\',\'{}\',\'{}\',\'{}\',\'{}\',\'{}\')'.format(
-                result[0], result[1], result[2], result[3], result[4], result[5])
+                result[0], result[1], result[2], result[5], result[6], result[7])
             print(sql_string)
             cursor.execute(sql_string)
         except Exception as e:

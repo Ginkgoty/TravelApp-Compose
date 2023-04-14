@@ -1,11 +1,3 @@
-/**
- * HomeViewModel.kt
- *
- * This file is ViewModel of home view
- *
- * @author Li Jiawen
- * @mail nmjbh@qq.com
- */
 package cn.edu.seu.travelapp.viewmodel
 
 import android.content.Context
@@ -16,11 +8,11 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.material.DrawerState
 import androidx.compose.material.DrawerValue
 import androidx.compose.runtime.*
-import androidx.datastore.dataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cn.edu.seu.travelapp.api.ApiConstants.IMG_BASE_URL
 import cn.edu.seu.travelapp.api.NoteApi
+import cn.edu.seu.travelapp.api.PictxtApi
 import cn.edu.seu.travelapp.api.UploadApi
 import cn.edu.seu.travelapp.model.*
 import cn.edu.seu.travelapp.ui.state.HomeViewContentState
@@ -31,14 +23,11 @@ import id.zelory.compressor.constraint.format
 import id.zelory.compressor.constraint.quality
 import id.zelory.compressor.constraint.resolution
 import id.zelory.compressor.constraint.size
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
@@ -52,13 +41,14 @@ import kotlin.random.Random
 data class HomeViewState(
     val homeViewContentState: HomeViewContentState = HomeViewContentState.NOTE_LIST,
     val note: Note?,
+    val pictxt: Pictxt?,
     var drawerState: DrawerState = DrawerState(DrawerValue.Closed),
     var lazyListState: LazyListState = LazyListState()
 )
 
 class HomeViewModel() : ViewModel() {
 
-    private val _uiState = MutableStateFlow(HomeViewState(note = null))
+    private val _uiState = MutableStateFlow(HomeViewState(note = null, pictxt = null))
     val uiState: StateFlow<HomeViewState> = _uiState.asStateFlow()
 
 
@@ -83,7 +73,7 @@ class HomeViewModel() : ViewModel() {
     }
 
 
-    var noteDetial: NoteDetail by mutableStateOf(NoteDetail(0, "", "", "", "", arrayListOf()))
+    var noteDetial: NoteDetail by mutableStateOf(NoteDetail(0, "", "", "", "", "", arrayListOf()))
     var catalogue: List<Pair<Int, String>> by mutableStateOf(listOf())
 
     fun getNoteDetail() {
@@ -125,72 +115,77 @@ class HomeViewModel() : ViewModel() {
         }
     }
 
-    // Content Editor Area
-    var editorBackground by mutableStateOf("")
-    var editorTitle by mutableStateOf("")
-    var editorRname by mutableStateOf("")
-    val editorNoteContentList = mutableStateListOf<Pair<MutableState<Int>, MutableState<String>>>()
+    /**
+     * Content Editor Area
+     */
+    var noteEditorBackground by mutableStateOf("")
+    var noteEditorTitle by mutableStateOf("")
+    var noteEditorRname by mutableStateOf("")
+    val noteEditorNoteContentList =
+        mutableStateListOf<Pair<MutableState<Int>, MutableState<String>>>()
+
+    var noteEditorSaveState = mutableStateOf(false)
 
     fun myNoteContentListInit() {
-        editorNoteContentList.add(Pair(mutableStateOf(1), mutableStateOf("")))
+        noteEditorNoteContentList.add(Pair(mutableStateOf(1), mutableStateOf("")))
     }
 
-    fun dealWithImgList(imgList: List<Uri>) {
+    fun dealWithNoteImgList(imgList: List<Uri>) {
         imgList.forEach {
-            editorNoteContentList.add(Pair(mutableStateOf(2), mutableStateOf(it.toString())))
+            noteEditorNoteContentList.add(Pair(mutableStateOf(2), mutableStateOf(it.toString())))
         }
         // Remove empty text input area
-        editorNoteContentList.removeIf {
+        noteEditorNoteContentList.removeIf {
             it.first.value == 1 && it.second.value == ""
         }
         // Add a new text input area
-        editorNoteContentList.add(Pair(mutableStateOf(1), mutableStateOf("")))
+        noteEditorNoteContentList.add(Pair(mutableStateOf(1), mutableStateOf("")))
     }
 
     fun deleteCurrentImage(content: String) {
-        editorNoteContentList.removeIf {
+        noteEditorNoteContentList.removeIf {
             it.first.value == 2 && it.second.value == content
         }
     }
 
     fun dealWithSectionTitle(st: String) {
         // Insert a section title
-        editorNoteContentList.add(Pair(mutableStateOf(0), mutableStateOf(st)))
+        noteEditorNoteContentList.add(Pair(mutableStateOf(0), mutableStateOf(st)))
         // Remove empty text input area
-        editorNoteContentList.removeIf {
+        noteEditorNoteContentList.removeIf {
             it.first.value == 1 && it.second.value == ""
         }
         // Add a new text input area
-        editorNoteContentList.add(Pair(mutableStateOf(1), mutableStateOf("")))
+        noteEditorNoteContentList.add(Pair(mutableStateOf(1), mutableStateOf("")))
     }
 
     fun updateSectionTitle(index: Int, st: String) {
-        editorNoteContentList[index].second.value = st
+        noteEditorNoteContentList[index].second.value = st
     }
 
     fun deleteSectionTitle(index: Int) {
-        editorNoteContentList.removeAt(index)
+        noteEditorNoteContentList.removeAt(index)
     }
 
     fun cleanUnusedItems() {
         val tempList = arrayListOf<Int>()
-        editorNoteContentList.forEachIndexed { index, pair ->
+        noteEditorNoteContentList.forEachIndexed { index, pair ->
             if (pair.first.value == 1) {
                 tempList.add(index)
             }
         }
         tempList.dropLast(1).forEach {
-            if (editorNoteContentList[it].second.value == "") {
-                editorNoteContentList.removeAt(it)
+            if (noteEditorNoteContentList[it].second.value == "") {
+                noteEditorNoteContentList.removeAt(it)
             }
         }
     }
 
     fun clearNoteEditor() {
-        editorBackground = ""
-        editorTitle = ""
-        editorRname = ""
-        editorNoteContentList.clear()
+        noteEditorBackground = ""
+        noteEditorTitle = ""
+        noteEditorRname = ""
+        noteEditorNoteContentList.clear()
     }
 
 
@@ -199,15 +194,15 @@ class HomeViewModel() : ViewModel() {
     fun uploadNote(token: String, context: Context) {
         // Deal with background
         viewModelScope.launch {
-            val temp_file = uriToFile(context = context, uri = Uri.parse(editorBackground))!!
+            val temp_file = uriToFile(context = context, uri = Uri.parse(noteEditorBackground))!!
             val bg_file = Compressor.compress(
                 context = context,
                 imageFile = temp_file
             ) {
                 resolution(width = 1920, height = 1080)
-                quality(80)
+                quality(70)
                 format(Bitmap.CompressFormat.JPEG)
-                size(maxFileSize = 2_097_152)
+                size(maxFileSize = 1 * 1024 * 1024)
             }
             val bg_md5 = HashUtil.getCheckSumFromFile(
                 digest = MessageDigest.getInstance(MessageDigestAlgorithm.MD5),
@@ -232,7 +227,7 @@ class HomeViewModel() : ViewModel() {
 
 
             val elist: MutableList<NoteItem> = mutableListOf()
-            editorNoteContentList.forEach { item ->
+            noteEditorNoteContentList.forEach { item ->
                 if (item.first.value == 0 || item.first.value == 1) {
                     elist.add(NoteItem(item.first.value, item.second.value))
                 } else {
@@ -243,9 +238,9 @@ class HomeViewModel() : ViewModel() {
                             imageFile = temp_file!!
                         ) {
                             resolution(width = 1920, height = 1080)
-                            quality(80)
+                            quality(70)
                             format(Bitmap.CompressFormat.JPEG)
-                            size(maxFileSize = 2_097_152)
+                            size(maxFileSize = 1 * 1024 * 1024)
                         }
                     val i_md5 = HashUtil.getCheckSumFromFile(
                         digest = MessageDigest.getInstance(MessageDigestAlgorithm.MD5),
@@ -276,8 +271,8 @@ class HomeViewModel() : ViewModel() {
                 token = token,
                 detail = NoteUploadDetail(
                     background = bg,
-                    title = editorTitle,
-                    rname = editorRname,
+                    title = noteEditorTitle,
+                    rname = noteEditorRname,
                     content = elist
                 )
             )
@@ -326,7 +321,160 @@ class HomeViewModel() : ViewModel() {
         return null
     }
 
-    fun checkBeforeUpload(): Boolean {
-        return editorBackground != "" && editorRname != "" && editorTitle != ""
+    fun checkNoteBeforeUpload(): Boolean {
+        return noteEditorBackground != "" && noteEditorRname != "" && noteEditorTitle != ""
+    }
+
+    /**
+     * Pictxt Editor Area
+     */
+    val pictxtImgList = mutableStateListOf<Uri>()
+    var pictxtEditorTitle by mutableStateOf("")
+    var pictxtEditorContent by mutableStateOf("")
+
+    var pictxtEditorSaveState = mutableStateOf(false)
+
+
+    fun clearPictxtEditor() {
+        pictxtImgList.clear()
+        pictxtEditorTitle = ""
+        pictxtEditorContent = ""
+    }
+
+    fun checkPictxtBeforeUpload(): Boolean {
+        return pictxtEditorContent != "" && pictxtEditorContent != ""
+    }
+
+    val uploadPictxtStatus = mutableStateOf(false)
+    fun uploadPictxt(context: Context, token: String) {
+        Log.d("token", token)
+        viewModelScope.launch {
+            val pictxtUpload = PictxtUpload()
+            pictxtUpload.token = token
+            pictxtUpload.title = pictxtEditorTitle
+            pictxtUpload.text = pictxtEditorContent
+            pictxtImgList.forEach {
+                val temp = uriToFile(context = context, uri = it)
+                val compression =
+                    Compressor.compress(
+                        context = context,
+                        imageFile = temp!!
+                    ) {
+                        quality(70)
+                        format(Bitmap.CompressFormat.JPEG)
+                        size(maxFileSize = 1 * 1024 * 1024)
+                    }
+                val md5 = HashUtil.getCheckSumFromFile(
+                    digest = MessageDigest.getInstance(MessageDigestAlgorithm.MD5),
+                    file = compression
+                )
+                val url = "$IMG_BASE_URL$md5.jpg"
+                pictxtUpload.imglist.add(url)
+                val uploadApi = UploadApi.getInstance()
+                try {
+                    uploadPictxtStatus.value = uploadApi.uploadSingleImage(
+                        type = "jpg",
+                        md5 = md5,
+                        image = MultipartBody.Part.createFormData(
+                            name = "image",
+                            filename = compression.name,
+                            body = compression.asRequestBody("image/*".toMediaTypeOrNull())
+                        )
+                    ).result
+                } catch (e: Exception) {
+                    uploadPictxtStatus.value = false
+                    errorMessage = e.message.toString()
+                    Log.d("Error", errorMessage)
+                }
+            }
+            val pictxtApi = PictxtApi.getInstance()
+            try {
+                uploadPictxtStatus.value = pictxtApi.uploadPictxt(
+                    pictxtUpload = pictxtUpload
+                ).result
+            } catch (e: Exception) {
+                uploadPictxtStatus.value = false
+                errorMessage = e.message.toString()
+                Log.d("Error", errorMessage)
+            }
+            showUploadSnackBar.value = true
+        }
+    }
+
+    var pictxtList: List<Pictxt> by mutableStateOf(listOf())
+    fun getPictxtList(token: String) {
+        viewModelScope.launch {
+            val pictxtApi = PictxtApi.getInstance()
+            try {
+                val pictxtListResponse = pictxtApi.getPictxtList(token = Token(token))
+                pictxtList = pictxtListResponse
+            } catch (e: Exception) {
+                errorMessage = e.message.toString()
+                Log.d("Error", errorMessage)
+            }
+        }
+    }
+
+    fun favPictxt(ptid: Int, token: String) {
+        viewModelScope.launch {
+            val pictxtApi = PictxtApi.getInstance()
+            try {
+                pictxtApi.favPictxt(ptid = ptid, Token(token))
+            } catch (e: Exception) {
+                errorMessage = e.message.toString()
+                Log.d("Error", errorMessage)
+            }
+        }
+    }
+
+    fun unfavPictxt(ptid: Int, token: String) {
+        viewModelScope.launch {
+            val pictxtApi = PictxtApi.getInstance()
+            try {
+                pictxtApi.unfavPictxt(ptid, Token(token))
+            } catch (e: Exception) {
+                errorMessage = e.message.toString()
+                Log.d("Error", errorMessage)
+            }
+        }
+    }
+
+    val ptCommentList = mutableStateOf(listOf(PtComment()))
+
+    val commentState = mutableStateOf(true)
+    val isComment = mutableStateOf(false)
+
+    fun comment(ptComment: PtCommentUpload) {
+        viewModelScope.launch {
+            val pictxtApi = PictxtApi.getInstance()
+            try {
+                commentState.value = pictxtApi.comment(ptComment).result
+                isComment.value = true
+            } catch (e: Exception) {
+                errorMessage = e.message.toString()
+                Log.d("Error", errorMessage)
+            }
+        }
+    }
+
+    fun fetchComments(ptid: Int) {
+        viewModelScope.launch {
+            val pictxtApi = PictxtApi.getInstance()
+            try {
+                val commentsResponse = pictxtApi.fetchComments(ptid)
+                ptCommentList.value = commentsResponse
+            } catch (e: Exception) {
+                errorMessage = e.message.toString()
+                Log.d("Error", errorMessage)
+            }
+        }
+    }
+
+    fun updateCurrentPictxt(pictxt: Pictxt) {
+        _uiState.update {
+            it.copy(
+                pictxt = pictxt
+            )
+        }
     }
 }

@@ -1,11 +1,3 @@
-/**
- * NoteUploadDetail.kt
- *
- * Data class of note detail when upload
- * @author Li Jiawen
- * @mail   nmjbh@qq.com
- *
- */
 package cn.edu.seu.travelapp.model
 
 data class NoteUploadDetail(

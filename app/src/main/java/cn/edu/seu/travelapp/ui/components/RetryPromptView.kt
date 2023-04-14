@@ -1,10 +1,3 @@
-/**
- * RetryPromptView.kt
- *
- * This file is ui when your network is bad.
- * @author Li Jiawen
- * @mail   nmjbh@qq.com
- */
 package cn.edu.seu.travelapp.ui.components
 
 import androidx.compose.foundation.clickable

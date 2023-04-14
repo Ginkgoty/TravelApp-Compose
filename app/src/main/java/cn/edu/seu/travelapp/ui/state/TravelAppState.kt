@@ -1,10 +1,3 @@
-/**
- * TravelAppState.kt
- *
- * This file is state of whole travel app
- * @author Li Jiawen
- * @mail   nmjbh@qq.com
- */
 package cn.edu.seu.travelapp.ui.state
 
 import androidx.compose.runtime.MutableState

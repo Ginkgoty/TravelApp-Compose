@@ -1,26 +1,9 @@
-/**
- * ExploreView.kt
- *
- * This file contains the entire ui of the Explore view
- *
- * The correspondence between the top bar and the content is as follows:
- *  Content<->TopBar
- *  REGIONS - INIT,SEARCH
- *  SPOTS   - REGION,RESULT_DETAIL
- *  DETAIL  - SPOT,RESULT_DETAIL
- *  SEARCH  - RESULT
- *
- * @author Li Jiawen
- * @mail nmjbh@qq.com
- */
 package cn.edu.seu.travelapp.ui.view
 
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.*
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
@@ -42,33 +25,46 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cn.edu.seu.travelapp.R
-import cn.edu.seu.travelapp.data.TokenStorage
+import cn.edu.seu.travelapp.data.DataStorage
 import cn.edu.seu.travelapp.model.Region
 import cn.edu.seu.travelapp.ui.components.*
 import cn.edu.seu.travelapp.ui.state.ExploreContentState
 import cn.edu.seu.travelapp.ui.state.ExploreTopBarState
+import cn.edu.seu.travelapp.ui.state.TravelAppState
 import cn.edu.seu.travelapp.viewmodel.ExploreViewModel
 import cn.edu.seu.travelapp.viewmodel.ExploreViewState
-import com.autonavi.base.amap.mapcore.AMapNativeGlOverlayLayer
-import com.melody.map.gd_compose.GDMap
-import com.melody.map.gd_compose.poperties.MapProperties
-import com.melody.map.gd_compose.poperties.MapUiSettings
+import java.time.LocalDateTime
 
+/**
+ * @author Li Jiawen
+ * @mail 213202838@seu.edu.cn
+ *
+ * This file contains the entire ui of the Explore view
+ *
+ * The correspondence between the top bar and the content is as follows:
+ *  Content<->TopBar
+ *  REGIONS - INIT,SEARCH
+ *  SPOTS   - REGION,RESULT_DETAIL
+ *  DETAIL  - SPOT,RESULT_DETAIL
+ *  SEARCH  - RESULT
+ */
 
 @Composable
 fun ExploreView(
     exploreViewModel: ExploreViewModel,
     exploreViewState: State<ExploreViewState>,
-    dataStore: TokenStorage,
+    travelAppState: TravelAppState,
+    dataStore: DataStorage,
     paddingValues: PaddingValues
 ) {
     when (exploreViewState.value.exploreContentState) {
         ExploreContentState.REGIONS -> {
-            if (exploreViewModel.regionListResponse.isEmpty()) {
+            if (exploreViewModel.regionListResponse.isEmpty() || exploreViewModel.recommendationListResponse.isEmpty()) {
                 BackHandler(enabled = true) {
 
                 }
                 RetryPromptView(paddingValues = paddingValues) {
+                    exploreViewModel.getRecommendList()
                     exploreViewModel.getRegionList()
                 }
             } else {
@@ -76,18 +72,13 @@ fun ExploreView(
                     BackHandler(enabled = true) {
 
                     }
-                    Text(
-                        text = "热门旅行目的地",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 28.sp,
-                        fontFamily = FontFamily(Font(R.font.hggys)),
-                        modifier = Modifier.padding(start = 5.dp)
-                    )
                     RegionList(
+                        recommendList = exploreViewModel.recommendationListResponse,
                         regionList = exploreViewModel.regionListResponse,
                         exploreViewModel = exploreViewModel,
                         dataStore = dataStore,
-                        paddingValues = paddingValues
+                        paddingValues = paddingValues,
+                        travelAppState = travelAppState
                     )
                 }
             }
@@ -98,11 +89,12 @@ fun ExploreView(
                 Surface(
                     elevation = 4.dp
                 ) {
-                    SpotList(
+                    RegionDetail(
                         spotList = exploreViewModel.spotListResponse,
                         exploreViewModel = exploreViewModel,
                         exploreViewState = exploreViewState,
                         dataStore = dataStore,
+                        travelAppState = travelAppState,
                         paddingValues = paddingValues
                     )
                 }
@@ -137,31 +129,80 @@ fun ExploreView(
                 )
             }
         }
+        ExploreContentState.FOOD -> {
+            BackHandler() {
+                exploreViewModel.updateContentState(ExploreContentState.SPOTS)
+                exploreViewModel.updateTopBarState(ExploreTopBarState.REGION)
+            }
+            FoodDetail(
+                food = exploreViewState.value.food!!
+            )
+        }
         ExploreContentState.SEARCH -> {
             BackHandler(enabled = true) {
+                travelAppState.bottomBarState.value = true
                 exploreViewModel.updateTopBarState(ExploreTopBarState.INIT)
                 exploreViewModel.updateContentState(ExploreContentState.REGIONS)
             }
-            SearchWidget(exploreViewModel = exploreViewModel, paddingValues = paddingValues)
+            SearchWidget(
+                exploreViewModel = exploreViewModel,
+                paddingValues = paddingValues,
+                token = dataStore.getAccessToken.collectAsState(
+                    initial = ""
+                ).value
+            )
         }
     }
 }
 
+fun LazyGridScope.header(
+    content: @Composable LazyGridItemScope.() -> Unit
+) {
+    item(span = { GridItemSpan(this.maxLineSpan) }, content = content)
+}
 
 @Composable
 fun RegionList(
+    recommendList: List<Region>,
     regionList: List<Region>,
     exploreViewModel: ExploreViewModel,
-    dataStore: TokenStorage,
+    dataStore: DataStorage,
+    travelAppState: TravelAppState,
     paddingValues: PaddingValues
 ) {
+    val month = LocalDateTime.now().monthValue
     val token = dataStore.getAccessToken.collectAsState(initial = "")
     LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = 128.dp),
-        modifier = Modifier.padding(bottom = paddingValues.calculateBottomPadding())
+        columns = GridCells.Fixed(count = 3),
+        modifier = Modifier.padding(bottom = paddingValues.calculateBottomPadding()),
     ) {
+        header {
+            Text(
+                text = "${month}月推荐目的地",
+                fontWeight = FontWeight.Bold,
+                fontSize = 28.sp,
+                fontFamily = FontFamily(Font(R.font.hggys)),
+                modifier = Modifier.padding(start = 5.dp)
+            )
+        }
+        items(recommendList) { item ->
+            RegionCard(region = item, onCardClicked = {
+                travelAppState.bottomBarState.value = false
+                exploreViewModel.regionClicked(region = item, token = token.value)
+            })
+        }
+        header {
+            Text(
+                text = "热门旅行目的地",
+                fontWeight = FontWeight.Bold,
+                fontSize = 28.sp,
+                fontFamily = FontFamily(Font(R.font.hggys)),
+                modifier = Modifier.padding(start = 5.dp)
+            )
+        }
         items(regionList) { item ->
             RegionCard(region = item, onCardClicked = {
+                travelAppState.bottomBarState.value = false
                 exploreViewModel.regionClicked(region = item, token = token.value)
             })
         }
@@ -172,11 +213,12 @@ fun RegionList(
 fun ExploreAppBar(
     exploreViewModel: ExploreViewModel,
     exploreViewState: State<ExploreViewState>,
-    dataStore: TokenStorage,
+    dataStore: DataStorage,
     onTextChange: (String) -> Unit,
     onCloseClicked: () -> Unit,
     onSearchClicked: (String) -> Unit,
-    onSearchTriggered: () -> Unit
+    onSearchTriggered: () -> Unit,
+    travelAppState: TravelAppState
 ) {
     when (exploreViewState.value.exploreTopBarState) {
         ExploreTopBarState.INIT -> {
@@ -196,11 +238,12 @@ fun ExploreAppBar(
             DetailAppBar(
                 exploreViewModel = exploreViewModel,
                 exploreViewState = exploreViewState,
-                dataStore = dataStore
+                dataStore = dataStore,
+                travelAppState = travelAppState
             )
         }
         ExploreTopBarState.RESULT -> {
-            ResultAppBar(exploreViewModel = exploreViewModel)
+            ResultAppBar(exploreViewModel = exploreViewModel, travelAppState = travelAppState)
         }
         ExploreTopBarState.RESULT_REGION, ExploreTopBarState.RESULT_SPOT, ExploreTopBarState.RESULT_SPOT_REGION -> {
             ResultDetailAppBar(
@@ -208,6 +251,9 @@ fun ExploreAppBar(
                 exploreViewState = exploreViewState,
                 dataStore = dataStore
             )
+        }
+        ExploreTopBarState.FOOD -> {
+            FoodAppBar(travelAppState = travelAppState, exploreViewModel = exploreViewModel)
         }
 
     }
@@ -260,8 +306,9 @@ fun SearchAppBar(
         elevation = AppBarDefaults.TopAppBarElevation,
         color = MaterialTheme.colors.primary
     ) {
-        TextField(modifier = Modifier
-            .fillMaxWidth(),
+        TextField(
+            modifier = Modifier
+                .fillMaxWidth(),
             value = text,
             onValueChange = {
                 onTextChange(it)
@@ -279,6 +326,7 @@ fun SearchAppBar(
                 fontSize = MaterialTheme.typography.subtitle1.fontSize
             ),
             singleLine = true,
+            maxLines = 1,
             leadingIcon = {
                 IconButton(
                     modifier = Modifier
@@ -320,7 +368,8 @@ fun SearchAppBar(
             colors = TextFieldDefaults.textFieldColors(
                 backgroundColor = Color.Transparent,
                 cursorColor = Color.White.copy(alpha = ContentAlpha.medium)
-            ))
+            ),
+        )
     }
 }
 
@@ -332,7 +381,8 @@ fun SearchAppBar(
 fun DetailAppBar(
     exploreViewModel: ExploreViewModel,
     exploreViewState: State<ExploreViewState>,
-    dataStore: TokenStorage,
+    travelAppState: TravelAppState,
+    dataStore: DataStorage,
 ) {
     val token = dataStore.getAccessToken.collectAsState(initial = "")
     CenterAlignedTopAppBar(
@@ -355,6 +405,7 @@ fun DetailAppBar(
                         exploreViewModel.updateContentState(ExploreContentState.SPOTS)
                     }
                     ExploreTopBarState.REGION -> {
+                        travelAppState.bottomBarState.value = true
                         exploreViewModel.updateTopBarState(ExploreTopBarState.INIT)
                         exploreViewModel.updateContentState(ExploreContentState.REGIONS)
                     }
@@ -422,7 +473,8 @@ fun DetailAppBar(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ResultAppBar(
-    exploreViewModel: ExploreViewModel
+    exploreViewModel: ExploreViewModel,
+    travelAppState: TravelAppState
 ) {
     CenterAlignedTopAppBar(
         title = {
@@ -438,6 +490,7 @@ fun ResultAppBar(
         ),
         navigationIcon = {
             IconButton(onClick = {
+                travelAppState.bottomBarState.value = true
                 exploreViewModel.updateTopBarState(ExploreTopBarState.INIT)
                 exploreViewModel.updateContentState(ExploreContentState.REGIONS)
             }) {
@@ -459,7 +512,7 @@ fun ResultAppBar(
 fun ResultDetailAppBar(
     exploreViewModel: ExploreViewModel,
     exploreViewState: State<ExploreViewState>,
-    dataStore: TokenStorage,
+    dataStore: DataStorage,
 ) {
     val token = dataStore.getAccessToken.collectAsState(initial = "")
     val exploreContentState = exploreViewModel.uiState.collectAsState()
@@ -505,14 +558,14 @@ fun ResultDetailAppBar(
                         exploreViewModel.showTokenError(true)
                         Log.d("errorbar", exploreViewModel.tokenDialogState.toString())
                     } else {
-                        if (exploreViewState.value.exploreTopBarState == ExploreTopBarState.REGION)
+                        if (exploreViewState.value.exploreTopBarState == ExploreTopBarState.RESULT_REGION)
                             exploreViewModel.updateRegionFavorite(token = token.value)
                         else
                             exploreViewModel.updateSpotFavorite(token = token.value)
                     }
                 }
             ) {
-                if (exploreViewState.value.exploreTopBarState == ExploreTopBarState.REGION) {
+                if (exploreViewState.value.exploreTopBarState == ExploreTopBarState.RESULT_REGION) {
                     if (exploreViewState.value.isRegionFavorite) {
                         Icon(
                             imageVector = Icons.Filled.Bookmark,
@@ -543,6 +596,39 @@ fun ResultDetailAppBar(
                 }
             }
         }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun FoodAppBar(
+    travelAppState: TravelAppState,
+    exploreViewModel: ExploreViewModel
+) {
+    CenterAlignedTopAppBar(
+        title = {
+            Text(
+                text = "行者",
+                color = Color.White,
+                fontFamily = FontFamily(Font(R.font.hggys)),
+                fontSize = 32.sp
+            )
+        },
+        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+            containerColor = MaterialTheme.colors.primary,
+        ),
+        navigationIcon = {
+            IconButton(onClick = {
+                exploreViewModel.updateTopBarState(ExploreTopBarState.REGION)
+                exploreViewModel.updateContentState(ExploreContentState.SPOTS)
+            }) {
+                Icon(
+                    imageVector = Icons.Filled.ArrowBack,
+                    contentDescription = "Back to forward UI",
+                    tint = Color.White,
+                )
+            }
+        },
     )
 }
 
